@@ -12,5 +12,6 @@
   :aot [unixsocket-http.impl.FixedPathUnixSocket
         unixsocket-http.impl.FixedPathUnixSocketFactory
         unixsocket-http.impl.StreamingBody]
-  :profiles {:dev {:global-vars {*warn-on-reflection* true}}}
+  :profiles {:dev {:dependencies [[org.nanohttpd/nanohttpd "2.3.1"]]
+                   :global-vars {*warn-on-reflection* true}}}
   :pedantic? :abort)

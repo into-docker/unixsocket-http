@@ -15,9 +15,13 @@
             Response
             ResponseBody]
            [java.io
-            InputStream]))
+            InputStream]
+           [java.time Duration]))
 
 ;; ##  Client
+
+(def ^:private ^Duration default-timeout
+  (Duration/ofSeconds 3))
 
 (defn client
   ([socket-path]
@@ -25,6 +29,10 @@
   ([socket-path builder-fn]
    (let [factory (FixedPathUnixSocketFactory. socket-path)
          builder (doto (OkHttpClient$Builder.)
+                   (.connectTimeout default-timeout)
+                   (.callTimeout default-timeout)
+                   (.readTimeout default-timeout)
+                   (.writeTimeout default-timeout)
                    (builder-fn)
                    (.socketFactory factory))]
      (.build builder))))
@@ -77,7 +85,7 @@
     (.build builder)))
 
 (defn- parse-response
-  [^Response response {:keys [as] :or {as :string} :as x}]
+  [^Response response {:keys [method as] :or {as :string} :as x}]
   {:status (.code response)
    :headers (let [it (.. response headers iterator)]
               (loop [headers {}]
@@ -93,13 +101,15 @@
                :socket nil))})
 
 (defn- handle-response
-  [{:keys [status] :as response}
-   {:keys [throw-exceptions throw-exceptions?]
+  [{:keys [status body] :as response}
+   {:keys [throw-exceptions throw-exceptions? as]
     :or {throw-exceptions true
          throw-exceptions? true}}]
   (when (and (>= status 400)
              throw-exceptions
              throw-exceptions?)
+    (when (= :stream as)
+      (.close ^InputStream body))
     (throw
       (ex-info
         (format "HTTP Error: %d" status)

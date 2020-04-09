@@ -42,7 +42,10 @@
 
 (defn -contentLength
   [this]
-  -1)
+  (let [length (.available (stream this))]
+    (if (pos? length)
+      length
+      -1)))
 
 (defn -writeTo
   [this ^BufferedSink sink]
