@@ -1,6 +1,7 @@
-(defproject socket-http "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
+(defproject unixsocket-http "0.1.0-SNAPSHOT"
+  :description "A library to allow HTTP calls over a UNIX socket, e.g. for
+                communicating with Docker."
+  :url "https://github.com/xsc/unixsocket-http"
   :license {:name "MIT License"
             :url "none"
             :year 2020
@@ -8,8 +9,8 @@
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [com.kohlschutter.junixsocket/junixsocket-core "2.3.2"]
                  [com.squareup.okhttp3/okhttp "4.4.0"]]
-  :aot [socket-http.impl.FixedPathUnixSocket
-        socket-http.impl.FixedPathUnixSocketFactory
-        socket-http.impl.StreamingBody]
+  :aot [unixsocket-http.impl.FixedPathUnixSocket
+        unixsocket-http.impl.FixedPathUnixSocketFactory
+        unixsocket-http.impl.StreamingBody]
   :profiles {:dev {:global-vars {*warn-on-reflection* true}}}
   :pedantic? :abort)

@@ -1,7 +1,7 @@
-(ns socket-http.core
+(ns unixsocket-http.core
   (:require [clojure.java.io :as io])
   (:refer-clojure :exclude [get])
-  (:import [socket_http.impl
+  (:import [unixsocket_http.impl
             FixedPathUnixSocketFactory
             StreamingBody]
            [okhttp3

@@ -1,15 +1,15 @@
-(ns socket-http.impl.FixedPathUnixSocketFactory
+(ns unixsocket-http.impl.FixedPathUnixSocketFactory
   "SocketFactory that produces `FixedPathUnixSocket` objects bound to a
    given path."
   (:gen-class
-    :name            socket_http.impl.FixedPathUnixSocketFactory
+    :name            unixsocket_http.impl.FixedPathUnixSocketFactory
     :extends         javax.net.SocketFactory
     :init            init
     :state           socketFn
     :constructors    {[String] []})
-  (:require [socket-http.impl.delegate :refer [delegate]]
+  (:require [unixsocket-http.impl.delegate :refer [delegate]]
             [clojure.java.io :as io])
-  (:import [socket_http.impl FixedPathUnixSocket]
+  (:import [unixsocket_http.impl FixedPathUnixSocket]
            [java.net InetAddress]
            [javax.net SocketFactory]))
 
@@ -22,7 +22,7 @@
 ;; ## Methods
 
 (defn- create-socket!
-  ^FixedPathUnixSocket [^socket_http.impl.FixedPathUnixSocketFactory this]
+  ^FixedPathUnixSocket [^unixsocket_http.impl.FixedPathUnixSocketFactory this]
   ((.-socketFn this)))
 
 (defn -createSocket

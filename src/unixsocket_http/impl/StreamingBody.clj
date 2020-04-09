@@ -1,7 +1,7 @@
-(ns socket-http.impl.StreamingBody
+(ns unixsocket-http.impl.StreamingBody
   "Implementation of OkHttp's RequestBody that streams some data."
   (:gen-class
-    :name         socket_http.impl.StreamingBody
+    :name         unixsocket_http.impl.StreamingBody
     :extends      okhttp3.RequestBody
     :init         init
     :state        state
@@ -27,11 +27,11 @@
                       media-type-octetstream)}]))
 
 (defn- stream
-  ^InputStream [^socket_http.impl.StreamingBody this]
+  ^InputStream [^unixsocket_http.impl.StreamingBody this]
   (:stream (.-state this)))
 
 (defn- media-type
-  ^InputStream [^socket_http.impl.StreamingBody this]
+  ^InputStream [^unixsocket_http.impl.StreamingBody this]
   (:media-type (.-state this)))
 
 ;; ## Methods
