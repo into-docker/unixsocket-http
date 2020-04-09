@@ -1,5 +1,7 @@
 # unixsocket-http
 
+**[Clojars Page](https://clojars.org/unixsocket-http)**
+
 [![Clojars Project](https://img.shields.io/clojars/v/unixsocket-http.svg)](https://clojars.org/unixsocket-http)
 
 **unixsocket-http** is a Clojure library to handle HTTP communication over
