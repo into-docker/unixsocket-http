@@ -1,5 +1,6 @@
 (ns unixsocket-http.core
-  (:require [clojure.java.io :as io])
+  (:require [clojure.java.io :as io]
+            [clojure.tools.logging :as log])
   (:refer-clojure :exclude [get])
   (:import [unixsocket_http.impl
             FixedPathUnixSocketFactory
@@ -14,25 +15,46 @@
             RequestBody
             Response
             ResponseBody]
-           [java.io
-            InputStream]
+           [java.net URI]
+           [java.io InputStream]
            [java.time Duration]))
 
 ;; ##  Client
 
-(def ^:private ^Duration default-timeout
-  (Duration/ofSeconds 3))
-
 (defn client
+  "Create a new HTTP client that utilises the given UNIX domain socket to
+   perform HTTP communication. Options are:
+
+   - `:timeout-ms`: A timeout that will be used for connect/call/read/write
+     timeout settings, unless they are explicitly specified using the
+     following options:
+     - `:connect-timeout-ms`
+     - `:call-timeout-ms`
+     - `:read-timeout-ms`
+     - `:write-timeout-ms`
+   - `:builder-fn`: a function that will be called on the underlying
+     `OkHttpClient$Builder` and can be used to perform arbitrary adjustments
+     to the HTTP client.
+
+   "
   ([socket-path]
-   (client socket-path identity))
-  ([socket-path builder-fn]
+   (client socket-path {}))
+  ([socket-path {:keys [builder-fn
+                        timeout-ms
+                        read-timeout-ms
+                        write-timeout-ms
+                        connect-timeout-ms
+                        call-timeout-ms]
+                 :or {builder-fn identity
+                      timeout-ms 0}}]
    (let [factory (FixedPathUnixSocketFactory. socket-path)
+         default-timeout (Duration/ofMillis timeout-ms)
+         to-timeout #(or (some-> % Duration/ofMillis) default-timeout)
          builder (doto (OkHttpClient$Builder.)
-                   (.connectTimeout default-timeout)
-                   (.callTimeout default-timeout)
-                   (.readTimeout default-timeout)
-                   (.writeTimeout default-timeout)
+                   (.connectTimeout (to-timeout connect-timeout-ms))
+                   (.callTimeout (to-timeout call-timeout-ms))
+                   (.readTimeout (to-timeout read-timeout-ms))
+                   (.writeTimeout (to-timeout write-timeout-ms))
                    (builder-fn)
                    (.socketFactory factory))]
      (.build builder))))
@@ -105,6 +127,7 @@
    {:keys [throw-exceptions throw-exceptions? as]
     :or {throw-exceptions true
          throw-exceptions? true}}]
+  (log/tracef "[unixsocket-http] <--- %s" (pr-str response))
   (when (and (>= status 400)
              throw-exceptions
              throw-exceptions?)
@@ -117,10 +140,11 @@
   response)
 
 (defn request
-  [{:keys [client] :as request}]
+  [request]
   (let [request (normalize-headers request)
         req     (build-request request)]
-    (-> ^OkHttpClient client
+    (log/tracef "[unixsocket-http] ---> %s" (pr-str (dissoc request :client)))
+    (-> ^OkHttpClient (:client request)
         (.newCall req)
         (.execute)
         (parse-response request)
@@ -129,30 +153,23 @@
 
 ;; ## Convenience
 
-(defn get
-  ([client url]
-   (get client url {}))
-  ([client url opts]
-   (request (merge opts {:client client, :method :get, :url url}))))
+(defmacro ^:private defrequest
+  [method]
+  `(defn ~method
+     ~(format
+        (str "Perform a %s request against the given client. Options are:%n%n"
+             "  - `:headers`:          a map of string/string pairs that will be sent as headers.%n"
+             "  - `:query-params`:     a map of string/string pairs that will be sent as the query string.%n"
+             "  - `:as`:               if set to `:stream` the response's body will be an `InputStream` value (that needs to be closed after consuming).%n"
+             "  - `:throw-exceptions`: if set to `false` all responses will be returned and no exception is thrown on HTTP error codes.%n")
+        (.toUpperCase (name method)))
+     ([~'client ~'url]
+      (~method ~'client ~'url {}))
+     ([~'client ~'url ~'opts]
+      (request (merge ~'opts {:client ~'client, :method ~(keyword (name method)) , :url ~'url})))))
 
-(defn head
-  ([client url]
-   (head client url {}))
-  ([client url opts]
-   (request (merge opts {:client client, :method :head, :url url}))))
-
-(defn post
-  [client url opts]
-  (request (merge opts {:client client, :method :post, :url url})))
-
-(defn put
-  [client url opts]
-  (request (merge opts {:client client, :method :put, :url url})))
-
-(defn patch
-  [client url opts]
-  (request (merge opts {:client client, :method :patch, :url url})))
-
-(defn delete
-  [client url opts]
-  (request (merge opts {:client client, :method :delete, :url url})))
+(defrequest get)
+(defrequest head)
+(defrequest post)
+(defrequest put)
+(defrequest delete)
