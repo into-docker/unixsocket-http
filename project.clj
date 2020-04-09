@@ -1,4 +1,4 @@
-(defproject unixsocket-http "1.0.0"
+(defproject unixsocket-http "1.0.1-SNAPSHOT"
   :description "A library to allow HTTP calls over a UNIX socket, e.g. for
                 communicating with Docker."
   :url "https://github.com/into-docker/unixsocket-http"
