@@ -27,7 +27,8 @@
 
 (defn -createSocket
   ([this]
-   (create-socket! this))
+   (doto (create-socket! this)
+     (.connect)))
   ([this ^InetAddress _ ^Integer _]
    (doto (create-socket! this)
      (.connect)))

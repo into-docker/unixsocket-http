@@ -9,6 +9,7 @@
                  [com.kohlschutter.junixsocket/junixsocket-core "2.3.2"]
                  [com.squareup.okhttp3/okhttp "4.4.0"]]
   :aot [socket-http.impl.FixedPathUnixSocket
-        socket-http.impl.FixedPathUnixSocketFactory]
+        socket-http.impl.FixedPathUnixSocketFactory
+        socket-http.impl.StreamingBody]
   :profiles {:dev {:global-vars {*warn-on-reflection* true}}}
   :pedantic? :abort)
