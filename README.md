@@ -43,7 +43,7 @@ Once you have a client, you can send requests:
 ;;  :body "OK"}
 ```
 
-All HTTP functions take an options map as it's last parameter that can be used
+All HTTP functions take an options map as their last parameter that can be used
 to supply additional data or alter the request/response behaviour.
 
 ### Query Parameters & Body
