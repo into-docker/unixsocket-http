@@ -12,7 +12,8 @@
     {
       "pattern": "\\QMETA-INF/services/jdk.vm.ci.services.JVMCIServiceLocator\\E"
     },
-    { "pattern": "lib/.+/jni/.+.so$" },
+    { "pattern": "lib/.+-clang/jni/.+.so$" },
+    { "pattern": "lib/.+-clang/jni/.+.dylib$" },
     { "pattern": "\\Qsun/net/idn/uidna.spp\\E" },
     { "pattern": "\\Qsun/text/resources/unorm.icu\\E" }
   ],
