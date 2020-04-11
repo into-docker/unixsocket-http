@@ -79,6 +79,24 @@ consume from.
 You can set `:throw-exceptions` to `false` in the options map to prevent the
 HTTP client from throwing an exception.
 
+## GraalVM
+
+This library can be used with GraalVM's [`native-image`][native-image] tool to
+create native Clojure executables. The necessary configuration files are already
+bundled with this library and can be referenced using the following CLI
+parameters:
+
+```
+native-image -jar $JAR \
+  ... \
+  -H:ReflectConfigurationResources=unixsocket/graalvm/reflect-config.json \
+  -H:ResourceConfigurationResources=unixsocket/graalvm/resource-config.json \
+  -H:JNIConfigurationResources=unixsocket/graalvm/jni-config.json \
+  ...
+```
+
+[native-image]: https://www.graalvm.org/docs/reference-manual/native-image/
+
 ## License
 
 ```

@@ -9,7 +9,9 @@
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [org.clojure/tools.logging "1.0.0"]
                  [com.kohlschutter.junixsocket/junixsocket-core "2.3.2"]
-                 [com.squareup.okhttp3/okhttp "4.4.0"]]
+                 [com.squareup.okhttp3/okhttp "4.4.0"]
+                 [org.jetbrains.kotlin/kotlin-stdlib-common "1.3.71"]]
+  :exclusions [org.clojure/clojure]
   :aot [unixsocket-http.impl.FixedPathUnixSocket
         unixsocket-http.impl.FixedPathUnixSocketFactory
         unixsocket-http.impl.StreamingBody]
