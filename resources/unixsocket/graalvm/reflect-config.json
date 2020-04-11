@@ -1,8 +1,5 @@
 [
   {
-    "name": "org.newsclub.lib.junixsocket.custom.NarMetadata"
-  },
-  {
     "name": "org.newsclub.lib.junixsocket.common.NarMetadata"
   },
   {
