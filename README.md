@@ -83,17 +83,7 @@ HTTP client from throwing an exception.
 
 This library can be used with GraalVM's [`native-image`][native-image] tool to
 create native Clojure executables. The necessary configuration files are already
-bundled with this library and can be referenced using the following CLI
-parameters:
-
-```
-native-image -jar $JAR \
-  ... \
-  -H:ReflectConfigurationResources=unixsocket/graalvm/reflect-config.json \
-  -H:ResourceConfigurationResources=unixsocket/graalvm/resource-config.json \
-  -H:JNIConfigurationResources=unixsocket/graalvm/jni-config.json \
-  ...
-```
+bundled with this library and should be picked up automatically.
 
 [native-image]: https://www.graalvm.org/docs/reference-manual/native-image/
 
