@@ -16,7 +16,13 @@ a similar API as [clj-http][].
 
 ```clojure
 (require '[unixsocket-http.core :as uhttp])
-(def client (uhttp/client "/var/run/docker.sock"))
+(def client (uhttp/client "unix:///var/run/docker.sock"))
+```
+
+To provide a common API towards TCP sockets, they are also supported:
+
+```clojure
+(def client (uhttp/client "tcp://127.0.0.1:6537"))
 ```
 
 Note that this project does not have the ambition to replicate all of clj-http's

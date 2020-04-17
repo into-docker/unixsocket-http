@@ -1,136 +1,142 @@
 (ns unixsocket-http.core-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test.check
+             [clojure-test :refer :all]
+             [generators :as gen]
+             [properties :as prop]]
+            [com.gfredericks.test.chuck :refer [times]]
+            [clojure.test :refer :all]
             [clojure.java.io :as io]
-            [unixsocket-http.core :as http])
-  (:import [org.newsclub.net.unix
-            AFUNIXServerSocket
-            AFUNIXSocketAddress]
-           [fi.iki.elonen
-            NanoHTTPD
-            NanoHTTPD$IHTTPSession
-            NanoHTTPD$ServerSocketFactory
-            NanoHTTPD$Response$Status]
-           [java.io File]))
+            [unixsocket-http.nanohttpd :refer :all]
+            [unixsocket-http.core :as http]))
 
-;; ## Fixtures
+;; ## Test Setup
+;;
+;; Runs all test cases automatically against UNIX/TCP/... endpoints.
 
-(defn- read-body
-  [^NanoHTTPD$IHTTPSession session]
-  (when-let [len (.. session
-                     (getHeaders)
-                     (get "content-length"))]
-    (let [in (.getInputStream session)
-          buf (byte-array (Integer. ^String len))]
-      (.read in buf)
-      (String. buf))))
+(def ^:dynamic make-client nil)
 
-(defn- start-nanohttpd
-  [^File socket-file]
-  (let [address (AFUNIXSocketAddress. socket-file)]
-    (doto (proxy [NanoHTTPD] [0]
-            (serve [^NanoHTTPD$IHTTPSession session]
-              (let [body (read-body session)
-                    method (str (.getMethod session))]
-                (case (.getUri session)
-                  "/ok"
-                  (NanoHTTPD/newFixedLengthResponse "OK")
+(use-fixtures
+  :each
+  (fn [f]
+    (doseq [server-fn [create-unix-socket-server
+                       create-tcp-socket-server]
+            :let [{:keys [url stop]} (server-fn)]]
+      (try
+        (binding [make-client #(http/client url)]
+          (f))
+        (finally
+          (stop))))))
 
-                  "/head"
-                  (NanoHTTPD/newFixedLengthResponse "")
+;; ## Request Generators
 
-                  "/echo"
-                  (NanoHTTPD/newFixedLengthResponse
-                    NanoHTTPD$Response$Status/OK
-                    "text/plain"
-                    body)
-
-                  "/fail"
-                  (NanoHTTPD/newFixedLengthResponse
-                    NanoHTTPD$Response$Status/INTERNAL_ERROR
-                    "text/plain"
-                    "FAIL")
-
-                  (NanoHTTPD/newFixedLengthResponse
-                    NanoHTTPD$Response$Status/NOT_FOUND
-                    "text/plain"
-                    "NOT_FOUND")))))
-      (.setServerSocketFactory
-        (proxy [NanoHTTPD$ServerSocketFactory] []
-          (create []
-            (AFUNIXServerSocket/forceBindOn address))))
-      (.start NanoHTTPD/SOCKET_READ_TIMEOUT false))))
-
-(defn- create-socket-server
+(defn- gen-request-fn
+  "This allows us to easily test e.g. `:as` specifiers in requests."
   []
-  (let [socket-file (doto (File/createTempFile "http" ".sock")
-                      (.delete))]
-    {:client (http/client (.getCanonicalPath socket-file))
-     :server (start-nanohttpd socket-file)}))
+  (->> (gen/elements
+         [{:pre #(assoc % :as :stream)
+           :post #(update % :body slurp)}
+          {:pre identity
+           :post identity}])
+       (gen/fmap
+         (fn [{:keys [pre post]}]
+           (comp post http/request pre)))))
 
-(defmacro with-socket-server
-  [client & body]
-  `(let [data# (create-socket-server)
-         server# (:server data#)
-         ~client (:client data#)]
-     (try
-       (do ~@body)
-       (finally
-         (.stop ^NanoHTTPD server#)))))
+(defn- gen-request
+  [gen]
+  (gen/fmap
+    (fn [[req headers query-params]]
+      (assoc req
+             :headers headers
+             :query-params query-params))
+    (gen/tuple
+      gen
+      (gen/map
+        (gen/elements ["x-header-one" "x-header-two"])
+        gen/string-ascii)
+      (gen/map
+        (gen/fmap str gen/char-alpha)
+        gen/string-ascii))))
 
-(deftest t-without-body
-  (with-socket-server client
-    (doseq [method [:get :delete]
-            :let [request {:method method, :client client}]]
-      (testing (name method)
-        (testing "- OK"
-          (let [{:keys [status body]}
-                (http/request (merge {:url "/ok"} request))]
-            (is (= 200 status))
-            (is (= "OK" body)))
-          (let [{:keys [status body]}
-                (http/request (merge {:url "/ok", :as :stream} request))]
-            (is (= 200 status))
-            (is (= "OK" (slurp body)))))
-        (testing "- FAIL"
-          (let [{:keys [status body]}
-                (http/request (merge {:url "/fail", :throw-exceptions false} request))]
-            (is (= 500 status))
-            (is (= "FAIL" body)))
-          (is (thrown-with-msg?
-                Exception
-                #"HTTP Error: 500"
-                (http/request (merge {:url "/fail"} request)))))))))
+(defn- gen-echo-request
+  []
+  (->> (gen/tuple
+         (gen/elements [:post :put :patch :delete])
+         gen/string-ascii)
+       (gen/fmap
+         (fn [[method body]]
+           {:client (make-client)
+            :method method
+            :url    "/echo"
+            :body   body}))
+       (gen-request)))
 
-(deftest t-head-requests
-  (with-socket-server client
-    (testing "head"
-      (let [{:keys [status body]}
-            (http/request {:client client, :method :head, :url "/head"})]
-        (is (= 200 status))
-        (is (= "" body))))))
+(defn- gen-ok-request
+  []
+  (->> (gen/elements [:get :post :put :patch :delete])
+       (gen/fmap
+         (fn [method]
+           {:client (make-client)
+            :method method
+            :url    "/ok"}))
+       (gen-request)))
 
-(deftest t-with-body
-  (with-socket-server client
-    (doseq [method [:post :put :patch :delete]
-            :let [request {:method method
-                           :client client
-                           :body (str "DATA-" (rand-int 10000))}]]
-      (testing (name method)
-        (testing "- OK"
-          (let [{:keys [status body]}
-                (http/request (merge {:url "/echo"} request))]
-            (is (= 200 status))
-            (is (= (:body request) body)))
-          (let [{:keys [status body]}
-                (http/request (merge {:url "/echo", :as :stream} request))]
-            (is (= 200 status))
-            (is (= (:body request) (slurp body)))))
-        (testing "- FAIL"
-          (let [{:keys [status body]}
-                (http/request (merge {:url "/fail", :throw-exceptions false} request))]
-            (is (= 500 status))
-            (is (= "FAIL" body)))
-          (is (thrown-with-msg?
-                Exception
-                #"HTTP Error: 500"
-                (http/request (merge {:url "/fail"} request)))))))))
+(defn- gen-head-request
+  []
+  (->> (gen/elements [:head])
+       (gen/fmap
+         (fn [method]
+           {:client (make-client)
+            :method method
+            :url    "/head"}))
+       (gen-request)))
+
+(defn- gen-fail-request
+  []
+  (->> (gen/elements [:get :post :put :patch :delete])
+       (gen/fmap
+         (fn [method]
+           {:client (make-client)
+            :method method
+            :url    "/fail"}))
+       (gen-request)))
+
+;; ## Tests
+
+(defspec t-request-with-body (times 50)
+  (prop/for-all
+    [request (gen-echo-request)
+     send!   (gen-request-fn)]
+    (let [{:keys [status body]} (send! request)]
+      (and (= 200 status) (= (:body request) body)))))
+
+(defspec t-request-without-body (times 50)
+  (prop/for-all
+    [request (gen-ok-request)
+     send!   (gen-request-fn)]
+    (let [{:keys [status body]} (send! request)]
+      (and (= 200 status) (= "OK" body)))))
+
+(defspec t-head-request (times 5)
+  (prop/for-all
+    [request (gen-head-request)
+     send!   (gen-request-fn)]
+    (let [{:keys [status body]} (send! request)]
+      (and (= 200 status) (= "" body)))))
+
+(defspec t-failing-request (times 50)
+  (prop/for-all
+    [request (gen-fail-request)
+     send!   (gen-request-fn)]
+    (and (is (thrown-with-msg?
+               Exception
+               #"HTTP Error: 500"
+               (send! request)))
+         true)))
+
+(defspec t-failing-request-without-exception (times 50)
+  (prop/for-all
+    [request (->> (gen-fail-request)
+                  (gen/fmap #(assoc % :throw-exceptions false)))
+     send!   (gen-request-fn)]
+    (let [{:keys [status body]} (send! request)]
+      (and (= 500 status) (= "FAIL" body)))))

@@ -14,7 +14,11 @@
   :exclusions [org.clojure/clojure]
   :aot [unixsocket-http.impl.FixedPathUnixSocket
         unixsocket-http.impl.FixedPathUnixSocketFactory
+        unixsocket-http.impl.FixedPathTcpSocket
+        unixsocket-http.impl.FixedPathTcpSocketFactory
         unixsocket-http.impl.StreamingBody]
-  :profiles {:dev {:dependencies [[org.nanohttpd/nanohttpd "2.3.1"]]
+  :profiles {:dev {:dependencies [[org.nanohttpd/nanohttpd "2.3.1"]
+                                  [org.clojure/test.check "1.0.0"]
+                                  [com.gfredericks/test.chuck "0.2.10"]]
                    :global-vars {*warn-on-reflection* true}}}
   :pedantic? :abort)

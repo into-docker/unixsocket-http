@@ -5,7 +5,7 @@
     :name            unixsocket_http.impl.FixedPathUnixSocketFactory
     :extends         javax.net.SocketFactory
     :init            init
-    :state           socketFn
+    :state           state
     :constructors    {[String] []})
   (:require [unixsocket-http.impl.delegate :refer [delegate]]
             [clojure.java.io :as io])
@@ -17,13 +17,13 @@
 
 (defn -init
   [^String path]
-  [[] #(FixedPathUnixSocket. path)])
+  [[] path])
 
 ;; ## Methods
 
 (defn- create-socket!
   ^FixedPathUnixSocket [^unixsocket_http.impl.FixedPathUnixSocketFactory this]
-  ((.-socketFn this)))
+  (FixedPathUnixSocket. ^String (.-state this)))
 
 (defn -createSocket
   ([this]
@@ -35,3 +35,7 @@
   ([this ^InetAddress _ ^Integer _ ^InetAddress _ ^Integer _]
    (doto (create-socket! this)
      (.connect))))
+
+(defn -toString
+  [^unixsocket_http.impl.FixedPathUnixSocketFactory this]
+  (str (.-state this)))

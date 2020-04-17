@@ -5,5 +5,9 @@
   {
     "name": "org.newsclub.net.unix.AFUNIXSocketImpl",
     "methods": [{ "name": "connect" }]
+  },
+  {
+    "name": "java.net.Socket",
+    "methods": [{ "name": "connect" }]
   }
 ]

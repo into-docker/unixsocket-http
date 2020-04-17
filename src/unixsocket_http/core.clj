@@ -3,6 +3,7 @@
             [clojure.tools.logging :as log])
   (:refer-clojure :exclude [get])
   (:import [unixsocket_http.impl
+            FixedPathTcpSocketFactory
             FixedPathUnixSocketFactory
             StreamingBody]
            [okhttp3
@@ -15,14 +16,55 @@
             RequestBody
             Response
             ResponseBody]
+           [javax.net SocketFactory]
            [java.net URI]
            [java.io InputStream]
            [java.time Duration]))
 
 ;; ##  Client
 
+(defn- create-client
+  [^SocketFactory factory
+   {:keys [builder-fn
+           timeout-ms
+           read-timeout-ms
+           write-timeout-ms
+           connect-timeout-ms
+           call-timeout-ms]
+    :or {builder-fn identity
+         timeout-ms 0}}]
+   (let [default-timeout (Duration/ofMillis timeout-ms)
+         to-timeout #(or (some-> % Duration/ofMillis) default-timeout)
+         builder (doto (OkHttpClient$Builder.)
+                   (.connectTimeout (to-timeout connect-timeout-ms))
+                   (.callTimeout (to-timeout call-timeout-ms))
+                   (.readTimeout (to-timeout read-timeout-ms))
+                   (.writeTimeout (to-timeout write-timeout-ms))
+                   (builder-fn)
+                   (.socketFactory factory))]
+     (.build builder)))
+
+(defn- create-socket-factory
+  ^SocketFactory [^String uri-str]
+  (let [uri (URI. uri-str)]
+    (case (.getScheme uri)
+      "unix" (FixedPathUnixSocketFactory. (.getPath uri))
+      "tcp"  (FixedPathTcpSocketFactory. (.getHost uri) (.getPort uri))
+      (throw
+        (IllegalArgumentException.
+          (str "Can only handle URI schemes 'unix' and 'tcp', given: " uri-str))))))
+
+(defn- adapt-url
+  "Ensure backwards-compatibility by prefixing filesystem paths with `unix://`"
+  [^String url]
+  (if-not (re-matches #"[a-zA-Z]+://.*" url)
+    (do
+      (println "Calling unixsocket-http.core/client with a path instead of a URL is DEPRECATED.")
+      (str "unix://" url))
+    url))
+
 (defn client
-  "Create a new HTTP client that utilises the given UNIX domain socket to
+  "Create a new HTTP client that utilises the given TCP or UNIX domain socket to
    perform HTTP communication. Options are:
 
    - `:timeout-ms`: A timeout that will be used for connect/call/read/write
@@ -34,30 +76,22 @@
      - `:write-timeout-ms`
    - `:builder-fn`: a function that will be called on the underlying
      `OkHttpClient$Builder` and can be used to perform arbitrary adjustments
-     to the HTTP client.
+     to the HTTP client (with exception of the socket factory.
+
+   Examples:
+
+   ```
+   (client \"unix:///var/run/docker.sock\")
+   (client \"tcp://127.0.0.1:6537\")
+   ```
 
    "
-  ([socket-path]
-   (client socket-path {}))
-  ([socket-path {:keys [builder-fn
-                        timeout-ms
-                        read-timeout-ms
-                        write-timeout-ms
-                        connect-timeout-ms
-                        call-timeout-ms]
-                 :or {builder-fn identity
-                      timeout-ms 0}}]
-   (let [factory (FixedPathUnixSocketFactory. socket-path)
-         default-timeout (Duration/ofMillis timeout-ms)
-         to-timeout #(or (some-> % Duration/ofMillis) default-timeout)
-         builder (doto (OkHttpClient$Builder.)
-                   (.connectTimeout (to-timeout connect-timeout-ms))
-                   (.callTimeout (to-timeout call-timeout-ms))
-                   (.readTimeout (to-timeout read-timeout-ms))
-                   (.writeTimeout (to-timeout write-timeout-ms))
-                   (builder-fn)
-                   (.socketFactory factory))]
-     (.build builder))))
+  ([url]
+   (client url {}))
+  ([url opts]
+   (-> (adapt-url url)
+       (create-socket-factory)
+       (create-client opts))))
 
 ;; ## Request
 
