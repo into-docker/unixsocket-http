@@ -1,7 +1,7 @@
 # unixsocket-http
 
 [![Clojars Project](https://img.shields.io/clojars/v/unixsocket-http.svg)](https://clojars.org/unixsocket-http)
-[![CircleCI](https://circleci.com/gh/into-docker/unixsocket-http.svg?style=shield)](https://circleci.com/gh/into-docker/unixsocket-http)
+[![CI](https://github.com/into-docker/unixsocket-http/workflows/CI/badge.svg)](https://github.com/into-docker/unixsocket-http/actions?query=workflow%3ACI)
 
 **unixsocket-http** is a Clojure library to handle HTTP communication over
 UNIX domain sockets. This kind of I/O is notably used by the [Docker][docker]
