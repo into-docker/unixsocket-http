@@ -17,6 +17,7 @@
         unixsocket-http.impl.FixedPathTcpSocket
         unixsocket-http.impl.FixedPathTcpSocketFactory
         unixsocket-http.impl.SingletonSocketFactory
+        unixsocket-http.impl.ResponseSocket
         unixsocket-http.impl.StreamingBody]
   :profiles {:dev {:dependencies [[org.nanohttpd/nanohttpd "2.3.1"]
                                   [org.clojure/test.check "1.0.0"]
