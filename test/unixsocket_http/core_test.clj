@@ -45,9 +45,9 @@
   [gen]
   (gen/fmap
     (fn [[req headers query-params]]
-      (assoc req
-             :headers headers
-             :query-params query-params))
+      (-> req
+          (update :headers #(merge headers %))
+          (update :query-params #(merge query-params %))))
     (gen/tuple
       gen
       (gen/map
@@ -60,13 +60,17 @@
 
 (defn- gen-stream-request
   []
-  (->> (gen/elements [:post :put :patch :delete])
+  (->> (gen/tuple
+         (gen/elements [:post :put :patch :delete])
+         gen/string-ascii)
        (gen/fmap
-         (fn [method]
-           {:client (make-client)
-            :method method
-            :url    "/stream"
-            :as     :socket}))
+         (fn [[method data]]
+           {:client       (make-client)
+            :method       method
+            :url          "/stream"
+            :query-params {"expect" (str (count data))}
+            :data         data
+            :as           :socket}))
        (gen-request)))
 
 (defn- gen-echo-request
@@ -155,17 +159,8 @@
 
 (defspec t-bidirectional-request (times 50)
   (prop/for-all
-    [request (gen-stream-request)
-     data    gen/string-ascii]
-    (let [{:keys [status body]}
-          (-> request
-              (update :url (fn [^String url]
-                             (str url
-                                  (if (pos? (.indexOf url "?"))
-                                    "&"
-                                    "?")
-                                  "expect=" (count data))))
-              (http/request))]
+    [{:keys [data] :as request} (gen-stream-request)]
+    (let [{:keys [status body]} (http/request request)]
       (with-open [^java.net.Socket socket body
                   out (.getOutputStream socket)
                   in (.getInputStream socket)]
