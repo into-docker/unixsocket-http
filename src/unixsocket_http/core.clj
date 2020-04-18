@@ -3,7 +3,9 @@
             [clojure.java.io :as io]
             [clojure.tools.logging :as log])
   (:refer-clojure :exclude [get])
-  (:import [unixsocket_http.impl StreamingBody]
+  (:import [unixsocket_http.impl
+            ResponseSocket
+            StreamingBody]
            [okhttp3
             HttpUrl
             HttpUrl$Builder
@@ -117,7 +119,9 @@
              (case as
                :string (.string body)
                :stream (.byteStream body)
-               :socket (client/get-socket connection)))})
+               :socket (ResponseSocket.
+                         (client/get-socket connection)
+                         response)))})
 
 (defn- handle-response
   [{:keys [status body] :as response}
