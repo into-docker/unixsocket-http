@@ -1,5 +1,5 @@
 (ns unixsocket-http.impl.SingletonSocketFactory
-  "SocketFactory that produces `FixedPathTcpSocket` objects bound to a fixed path."
+  "Wrapper around a `SocketFactory` that will cache the created socket."
   (:gen-class
     :name            unixsocket_http.impl.SingletonSocketFactory
     :extends         javax.net.SocketFactory
