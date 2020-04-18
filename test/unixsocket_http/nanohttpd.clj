@@ -25,8 +25,7 @@
   ^NanoHTTPD []
   (proxy [NanoHTTPD] [0]
     (serve [^NanoHTTPD$IHTTPSession session]
-      (let [body (read-body session)
-            method (str (.getMethod session))]
+      (let [method (str (.getMethod session))]
         (case (.getUri session)
           "/ok"
           (NanoHTTPD/newFixedLengthResponse "OK")
@@ -38,7 +37,19 @@
           (NanoHTTPD/newFixedLengthResponse
             NanoHTTPD$Response$Status/OK
             "text/plain"
-            body)
+            (read-body session))
+
+          "/stream"
+          (let [len (-> (.getParameters session)
+                        ^java.util.List
+                        (.get "expect")
+                        (.get (int 0))
+                        (Integer/parseInt))]
+            (NanoHTTPD/newFixedLengthResponse
+              NanoHTTPD$Response$Status/OK
+              "application/octet-stream"
+              (.getInputStream session)
+              len))
 
           "/fail"
           (NanoHTTPD/newFixedLengthResponse

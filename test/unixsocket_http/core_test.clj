@@ -57,6 +57,18 @@
         (gen/fmap str gen/char-alpha)
         gen/string-ascii))))
 
+
+(defn- gen-stream-request
+  []
+  (->> (gen/elements [:post :put :patch :delete])
+       (gen/fmap
+         (fn [method]
+           {:client (make-client)
+            :method method
+            :url    "/stream"
+            :as     :socket}))
+       (gen-request)))
+
 (defn- gen-echo-request
   []
   (->> (gen/tuple
@@ -140,3 +152,23 @@
      send!   (gen-request-fn)]
     (let [{:keys [status body]} (send! request)]
       (and (= 500 status) (= "FAIL" body)))))
+
+(defspec t-bidirectional-request (times 50)
+  (prop/for-all
+    [request (gen-stream-request)
+     data    gen/string-ascii]
+    (let [{:keys [status body]}
+          (-> request
+              (update :url (fn [^String url]
+                             (str url
+                                  (if (pos? (.indexOf url "?"))
+                                    "&"
+                                    "?")
+                                  "expect=" (count data))))
+              (http/request))]
+      (with-open [^java.net.Socket socket body
+                  out (.getOutputStream socket)
+                  in (.getInputStream socket)]
+        (io/copy data out)
+        (and (= 200 status)
+             (= data (slurp in)))))))
