@@ -1,67 +1,22 @@
 (ns unixsocket-http.core
-  (:require [clojure.java.io :as io]
+  (:require [unixsocket-http.client :as client]
+            [clojure.java.io :as io]
             [clojure.tools.logging :as log])
   (:refer-clojure :exclude [get])
-  (:import [unixsocket_http.impl
-            FixedPathTcpSocketFactory
-            FixedPathUnixSocketFactory
-            StreamingBody]
+  (:import [unixsocket_http.impl StreamingBody]
            [okhttp3
             HttpUrl
             HttpUrl$Builder
             OkHttpClient
-            OkHttpClient$Builder
             Request
             Request$Builder
             RequestBody
             Response
             ResponseBody]
-           [javax.net SocketFactory]
-           [java.net URI]
-           [java.io InputStream]
-           [java.time Duration]))
+           [java.net Socket]
+           [java.io InputStream]))
 
 ;; ##  Client
-
-(defn- create-client
-  [^SocketFactory factory
-   {:keys [builder-fn
-           timeout-ms
-           read-timeout-ms
-           write-timeout-ms
-           connect-timeout-ms
-           call-timeout-ms]
-    :or {builder-fn identity
-         timeout-ms 0}}]
-   (let [default-timeout (Duration/ofMillis timeout-ms)
-         to-timeout #(or (some-> % Duration/ofMillis) default-timeout)
-         builder (doto (OkHttpClient$Builder.)
-                   (.connectTimeout (to-timeout connect-timeout-ms))
-                   (.callTimeout (to-timeout call-timeout-ms))
-                   (.readTimeout (to-timeout read-timeout-ms))
-                   (.writeTimeout (to-timeout write-timeout-ms))
-                   (builder-fn)
-                   (.socketFactory factory))]
-     (.build builder)))
-
-(defn- create-socket-factory
-  ^SocketFactory [^String uri-str]
-  (let [uri (URI. uri-str)]
-    (case (.getScheme uri)
-      "unix" (FixedPathUnixSocketFactory. (.getPath uri))
-      "tcp"  (FixedPathTcpSocketFactory. (.getHost uri) (.getPort uri))
-      (throw
-        (IllegalArgumentException.
-          (str "Can only handle URI schemes 'unix' and 'tcp', given: " uri-str))))))
-
-(defn- adapt-url
-  "Ensure backwards-compatibility by prefixing filesystem paths with `unix://`"
-  [^String url]
-  (if-not (re-matches #"[a-zA-Z]+://.*" url)
-    (do
-      (println "Calling unixsocket-http.core/client with a path instead of a URL is DEPRECATED.")
-      (str "unix://" url))
-    url))
 
 (defn client
   "Create a new HTTP client that utilises the given TCP or UNIX domain socket to
@@ -74,9 +29,17 @@
      - `:call-timeout-ms`
      - `:read-timeout-ms`
      - `:write-timeout-ms`
-   - `:builder-fn`: a function that will be called on the underlying
+   - `:builder-fn`: A function that will be called on the underlying
      `OkHttpClient$Builder` and can be used to perform arbitrary adjustments
      to the HTTP client (with exception of the socket factory.
+   - `:mode`: A keyword describing the connection behaviour:
+     - `:default`: A reusable client will be created, except for raw socket
+       access where a new connection will be established.
+     - `:reuse`: A reusable client will be created, and raw socket access will
+       not be possible.
+     - `:recreate`: For every request a new client will be created; this might
+       be useful if you encounter problems with sharing the client across
+       threads.
 
    Examples:
 
@@ -89,9 +52,7 @@
   ([url]
    (client url {}))
   ([url opts]
-   (-> (adapt-url url)
-       (create-socket-factory)
-       (create-client opts))))
+   (client/create url opts)))
 
 ;; ## Request
 
@@ -141,7 +102,9 @@
     (.build builder)))
 
 (defn- parse-response
-  [^Response response {:keys [method as] :or {as :string} :as x}]
+  [^Response response
+   {:keys [client method as] :or {as :string}}
+   connection]
   {:status (.code response)
    :headers (let [it (.. response headers iterator)]
               (loop [headers {}]
@@ -154,7 +117,7 @@
              (case as
                :string (.string body)
                :stream (.byteStream body)
-               :socket nil))})
+               :socket (client/get-socket connection)))})
 
 (defn- handle-response
   [{:keys [status body] :as response}
@@ -165,8 +128,10 @@
   (when (and (>= status 400)
              throw-exceptions
              throw-exceptions?)
-    (when (= :stream as)
-      (.close ^InputStream body))
+    (case as
+      :stream (.close ^InputStream body)
+      :socket (.close ^Socket body)
+      nil)
     (throw
       (ex-info
         (format "HTTP Error: %d" status)
@@ -175,13 +140,14 @@
 
 (defn request
   [request]
-  (let [request (normalize-headers request)
-        req     (build-request request)]
+  (let [request    (normalize-headers request)
+        req        (build-request request)
+        connection (client/connection request)]
     (log/tracef "[unixsocket-http] ---> %s" (pr-str (dissoc request :client)))
-    (-> ^OkHttpClient (:client request)
+    (-> (client/get-client connection)
         (.newCall req)
         (.execute)
-        (parse-response request)
+        (parse-response request connection)
         (normalize-headers)
         (handle-response request))))
 
