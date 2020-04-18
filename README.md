@@ -77,8 +77,12 @@ supplied as either `InputStream` or `String` using the `:body` key.
 
 ### Streaming Responses
 
-Use `:as :stream` in the options map to make `:body` an `InputStream` to
-consume from.
+Use `:as :stream` in the options map to make `:body` an `java.io.InputStream` to
+consume from. Alternatively, use `:as :socket` to get access to the underlying
+`java.net.Socket` for bidirectional communication.
+
+Always make sure to call `close` on the resources obtained this way, otherwise
+you'll run into connection leaks.
 
 ### Exceptions
 
