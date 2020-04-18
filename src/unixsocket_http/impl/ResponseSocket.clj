@@ -21,7 +21,7 @@
 
 (defn- get-response
   ^Response [^unixsocket_http.impl.ResponseSocket this]
-  (-> this (.-state)  (:object)))
+  (-> this (.-state)  (:response)))
 
 ;; ## Constructor
 
@@ -45,7 +45,5 @@
 
 (defn -close
   [this]
-  (try
-    (.close (get-response this))
-    (catch Exception _))
+  (.close (get-response this))
   (.close (get-socket this)))
