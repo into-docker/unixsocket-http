@@ -68,7 +68,9 @@
 (defn- build-url
   ^HttpUrl
   [{:keys [url query-params]}]
-  (let [^HttpUrl$Builder builder (->> (str "http://localhost" url)
+  (let [^HttpUrl$Builder builder (->> (if (re-matches #"https?://.*" url)
+                                        url
+                                        (str "http://localhost" url))
                                       (HttpUrl/parse)
                                       (.newBuilder))]
     (doseq [[k v] query-params]

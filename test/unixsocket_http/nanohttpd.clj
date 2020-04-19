@@ -84,3 +84,10 @@
                  (.start NanoHTTPD/SOCKET_READ_TIMEOUT false))]
     {:url (str "tcp://127.0.0.1:" (.getListeningPort server))
      :stop #(.stop server)}))
+
+(defn create-http-socket-server
+  ^NanoHTTPD []
+  (let [server (doto (create-nanohttpd)
+                 (.start NanoHTTPD/SOCKET_READ_TIMEOUT false))]
+    {:url (str "http://localhost:" (.getListeningPort server))
+     :stop #(.stop server)}))

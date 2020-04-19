@@ -19,7 +19,8 @@
   :each
   (fn [f]
     (doseq [server-fn [create-unix-socket-server
-                       create-tcp-socket-server]
+                       create-tcp-socket-server
+                       create-http-socket-server]
             :let [{:keys [url stop]} (server-fn)]]
       (try
         (binding [make-client #(http/client url)]
@@ -36,6 +37,8 @@
          [{:pre #(assoc % :as :stream)
            :post #(update % :body slurp)}
           {:pre identity
+           :post identity}
+          {:pre #(update % :url (partial str "http://some-host:1234"))
            :post identity}])
        (gen/fmap
          (fn [{:keys [pre post]}]

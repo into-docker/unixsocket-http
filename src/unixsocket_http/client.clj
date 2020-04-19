@@ -4,11 +4,22 @@
             FixedPathUnixSocketFactory
             SingletonSocketFactory]
            [okhttp3
+            Dns
             OkHttpClient
             OkHttpClient$Builder]
            [javax.net SocketFactory]
-           [java.net InetSocketAddress Socket URI]
+           [java.net InetAddress InetSocketAddress Socket URI]
            [java.time Duration]))
+
+;; ## No DNS Lookups
+;;
+;; DNS lookups in static builds would be a problem. Plus, since the socket is
+;; already connected to a specific IP, it's kinda pointless.
+
+(deftype NoDns []
+  Dns
+  (lookup [this hostname]
+    [(InetAddress/getByAddress hostname (byte-array 4))]))
 
 ;; ## SocketFactory
 
@@ -21,12 +32,23 @@
       (str "unix://" url))
     url))
 
+(defn- get-port
+  [^URI uri & [default]]
+  (let [port (.getPort uri)]
+    (or (if (pos? port)
+          port
+          default)
+        (throw
+          (IllegalArgumentException.
+            (str "Port is required in URI: " uri))))))
+
 (defn- create-socket-factory
   ^SocketFactory [^String uri-str]
   (let [uri (URI. (adapt-url uri-str))]
     (case (.getScheme uri)
       "unix" (FixedPathUnixSocketFactory. (.getPath uri))
-      "tcp"  (FixedPathTcpSocketFactory. (.getHost uri) (.getPort uri))
+      "tcp"  (FixedPathTcpSocketFactory. (.getHost uri) (get-port uri))
+      "http" (FixedPathTcpSocketFactory. (.getHost uri) (get-port uri 80))
       (throw
         (IllegalArgumentException.
           (str "Can only handle URI schemes 'unix' and 'tcp', given: " uri-str))))))
@@ -46,9 +68,12 @@
            read-timeout-ms
            write-timeout-ms
            connect-timeout-ms
-           call-timeout-ms]
+           call-timeout-ms
+           ;; undocumented options (maybe useful for debugging?)
+           ::dns?]
     :or {builder-fn identity
-         timeout-ms 0}}]
+         timeout-ms 0
+         dns?       false}}]
    (let [default-timeout (Duration/ofMillis timeout-ms)
          to-timeout #(or (some-> % Duration/ofMillis) default-timeout)
          builder (doto (OkHttpClient$Builder.)
@@ -56,6 +81,7 @@
                    (.callTimeout (to-timeout call-timeout-ms))
                    (.readTimeout (to-timeout read-timeout-ms))
                    (.writeTimeout (to-timeout write-timeout-ms))
+                   (cond-> (not dns?) (.dns (NoDns.)))
                    (builder-fn)
                    (.socketFactory factory))
          client (delay (.build builder))]
