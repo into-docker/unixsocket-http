@@ -96,6 +96,10 @@
 (defn- build-request
   ^Request
   [{:keys [method headers] :as request}]
+  (when-not (#{:get :post :put :delete :patch :head} method)
+    (throw
+      (IllegalArgumentException.
+        (str "Invalid HTTP method keyword supplied: " method))))
   (let [^Request$Builder builder (doto (Request$Builder.)
                                    (.method
                                      (.toUpperCase (name method))
