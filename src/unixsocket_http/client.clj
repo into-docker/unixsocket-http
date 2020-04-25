@@ -51,13 +51,8 @@
       "http" (FixedPathTcpSocketFactory. (.getHost uri) (get-port uri 80))
       (throw
         (IllegalArgumentException.
-          (str "Can only handle URI schemes 'unix' and 'tcp', given: " uri-str))))))
-
-(defn- create-singleton-socket-factory
-  ^SingletonSocketFactory
-  [^String uri-str]
-  (SingletonSocketFactory.
-    (create-socket-factory uri-str)))
+          (str "Can only handle URI schemes 'unix', 'tcp' and 'http', given: "
+               uri-str))))))
 
 ;; ## OkHttpClient
 
@@ -91,10 +86,11 @@
 
 (defn- recreating-client
   [url opts]
-  (fn [request]
-    (let [factory (create-singleton-socket-factory url)]
-      {::client (create-client factory opts)
-       ::socket (.getSocket factory)})))
+  (let [base-factory (create-socket-factory url)]
+    (fn [request]
+      (let [factory (SingletonSocketFactory. base-factory)]
+        {::client (create-client factory opts)
+         ::socket (.getSocket factory)}))))
 
 (defn- reusable-client
   [url opts]
