@@ -2,6 +2,7 @@
 
 [![Clojars Project](https://img.shields.io/clojars/v/unixsocket-http.svg)](https://clojars.org/unixsocket-http)
 [![CI](https://github.com/into-docker/unixsocket-http/workflows/CI/badge.svg)](https://github.com/into-docker/unixsocket-http/actions?query=workflow%3ACI)
+[![Compatible with GraalVM](https://img.shields.io/badge/graalvm-compatible-success)](https://www.graalvm.org/docs/reference-manual/native-image)
 
 **unixsocket-http** is a Clojure library to handle HTTP communication over
 UNIX domain sockets. This kind of I/O is notably used by the [Docker][docker]
