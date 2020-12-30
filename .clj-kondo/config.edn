@@ -1,0 +1,2 @@
+{:lint-as {unixsocket-http.core/defrequest        clojure.core/declare
+           unixsocket-http.impl.delegate/delegate clojure.core/quote}}
