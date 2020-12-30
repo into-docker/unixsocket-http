@@ -38,5 +38,6 @@
                       "--reporter" "documentation"
                       "--plugin"   "cloverage"
                       "--codecov"
-                      "--no-cov-html"]}
+                      "--no-cov-html"
+                      "--cov-ns-exclude-regex" "unixsocket-http\\.impl\\..+"]}
   :pedantic? :abort)
