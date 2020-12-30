@@ -1,4 +1,5 @@
 (ns unixsocket-http.client
+  (:require [clojure.string :as string])
   (:import [unixsocket_http.impl
             FixedPathTcpSocketFactory
             FixedPathUnixSocketFactory
@@ -26,35 +27,47 @@
 (defn- adapt-url
   "Ensure backwards-compatibility by prefixing filesystem paths with `unix://`"
   [^String url]
-  (if-not (re-matches #"[a-zA-Z]+://.*" url)
-    (do
-      (println "Calling unixsocket-http.core/client with a path instead of a URL is DEPRECATED.")
-      (str "unix://" url))
-    url))
+  (-> (if-not (re-matches #"[a-zA-Z]+://.*" url)
+        (do
+          (println "Calling unixsocket-http.core/client with a path instead of a URL is DEPRECATED.")
+          (str "unix://" url))
+        url)
+      (string/replace #"/+$" "")))
 
 (defn- get-port
   [^URI uri & [default]]
   (let [port (.getPort uri)]
-    (or (if (pos? port)
-          port
-          default)
+    (or (int
+          (if (pos? port)
+            port
+            default))
         (throw
           (IllegalArgumentException.
             (str "Port is required in URI: " uri))))))
 
+(defn- create-socket-factory-from-uri
+  [^URI uri]
+  (case (.getScheme uri)
+    "unix"  (FixedPathUnixSocketFactory. (.getPath uri))
+    "tcp"   (FixedPathTcpSocketFactory. (.getHost uri) (get-port uri))
+    "http"  (FixedPathTcpSocketFactory. (.getHost uri) (get-port uri 80))
+    (throw
+      (IllegalArgumentException.
+        (str "Can only handle URI schemes 'unix', 'tcp', 'http' and 'https', "
+             "given: "
+             uri)))))
+
+(defn- create-base-uri
+  [^URI uri]
+  (if (contains? #{"tcp" "unix"} (.getScheme uri))
+    "http://localhost"
+    (str uri)))
+
 (defn- create-socket-factory
   ^SocketFactory [^String uri-str]
   (let [uri (URI. (adapt-url uri-str))]
-    (case (.getScheme uri)
-      "unix"  (FixedPathUnixSocketFactory. (.getPath uri))
-      "tcp"   (FixedPathTcpSocketFactory. (.getHost uri) (get-port uri))
-      "http"  (FixedPathTcpSocketFactory. (.getHost uri) (get-port uri 80))
-      "https" (FixedPathTcpSocketFactory. (.getHost uri) (get-port uri 443))
-      (throw
-        (IllegalArgumentException.
-          (str "Can only handle URI schemes 'unix', 'tcp', 'http' and 'https', "
-               "given: "
-               uri-str))))))
+    {:factory (create-socket-factory-from-uri uri)
+     :uri     (create-base-uri uri)}))
 
 ;; ## OkHttpClient
 
@@ -87,33 +100,36 @@
 
 (defn- recreating-client
   [url opts]
-  (let [base-factory (create-socket-factory url)]
-    (fn [_]
-      (let [factory (SingletonSocketFactory. base-factory)]
-        {::client (create-client factory opts)
-         ::socket (.getSocket factory)}))))
+  (let [{:keys [factory uri]} (create-socket-factory url)]
+    {::factory (fn [_]
+                 (let [factory (SingletonSocketFactory. factory)]
+                   {::client (create-client factory opts)
+                    ::socket (.getSocket factory)}))
+     ::uri     uri}))
 
 (defn- reusable-client
   [url opts]
-  (let [client (-> (create-socket-factory url)
-                   (create-client opts))]
-    (fn [request]
-      (when (= (:as request) :socket)
-        (throw
-          (IllegalArgumentException.
-            (str "Client mode `:reuse` does not allow direct socket access.\n"
-                 "See documentation of `unixsocket-http.core/client`."))))
-      {::client client})))
+  (let [{:keys [factory uri]} (create-socket-factory url)
+        client (create-client factory opts)]
+    {::factory (fn [request]
+                 (when (= (:as request) :socket)
+                   (throw
+                     (IllegalArgumentException.
+                       (str "Client mode `:reuse` does not allow direct socket access.\n"
+                            "See documentation of `unixsocket-http.core/client`."))))
+                 {::client client})
+     ::uri     uri}))
 
 (defn- hybrid-client
   "Client that will create a fresh connection when the raw socket is requested."
   [url opts]
   (let [fresh (recreating-client url opts)
         client (reusable-client url opts)]
-    (fn [{:keys [as] :as request}]
-      (if (= as :socket)
-        (fresh request)
-        (client request)))))
+    {::factory (fn [{:keys [as] :as request}]
+                 (if (= as :socket)
+                   ((::factory fresh) request)
+                   ((::factory client) request)))
+     ::uri     (some ::uri [fresh client])}))
 
 ;; ## API
 
@@ -126,7 +142,12 @@
 
 (defn connection
   [{:keys [client] :as request}]
-  (client request))
+  {:post [(some? %)]}
+  ((::factory client) request))
+
+(defn base-uri
+  [{:keys [client]}]
+  (::uri client))
 
 (defn get-client
   ^OkHttpClient [connection]
