@@ -19,8 +19,23 @@
         unixsocket-http.impl.SingletonSocketFactory
         unixsocket-http.impl.ResponseSocket
         unixsocket-http.impl.StreamingBody]
-  :profiles {:dev {:dependencies [[org.nanohttpd/nanohttpd "2.3.1"]
-                                  [org.clojure/test.check "1.0.0"]
-                                  [com.gfredericks/test.chuck "0.2.10"]]
-                   :global-vars {*warn-on-reflection* true}}}
+  :profiles {:dev
+             {:dependencies [[org.nanohttpd/nanohttpd "2.3.1"]
+                             [org.clojure/test.check "1.0.0"]
+                             [com.gfredericks/test.chuck "0.2.10"]]
+              :global-vars {*warn-on-reflection* true}}
+             :kaocha
+             {:dependencies [[lambdaisland/kaocha "1.0.732"
+                              :exclusions [org.clojure/spec.alpha]]
+                             [lambdaisland/kaocha-cloverage "1.0.75"]
+                             [org.clojure/java.classpath "1.0.0"]]}
+             :ci
+             [:kaocha
+              {:global-vars {*warn-on-reflection* false}}]}
+  :aliases {"kaocha" ["with-profile" "+kaocha" "run" "-m" "kaocha.runner"]
+            "ci"     ["with-profile" "+ci" "run" "-m" "kaocha.runner"
+                      "--reporter" "documentation"
+                      "--plugin"   "cloverage"
+                      "--codecov"
+                      "--no-cov-html"]}
   :pedantic? :abort)
