@@ -6,7 +6,7 @@
             [com.gfredericks.test.chuck :refer [times]]
             [clojure.test :refer :all]
             [clojure.java.io :as io]
-            [unixsocket-http.nanohttpd :refer :all]
+            [unixsocket-http.test.http-server :refer :all]
             [unixsocket-http.core :as http]))
 
 ;; ## Test Setup
@@ -14,16 +14,21 @@
 ;; Runs all test cases automatically against UNIX/TCP/... endpoints.
 
 (def ^:dynamic make-client nil)
+(def ^:dynamic adjust-url identity)
 
 (use-fixtures
   :each
   (fn [f]
     (doseq [server-fn [create-unix-socket-server
                        create-tcp-socket-server
-                       create-http-socket-server]
-            :let [{:keys [url stop]} (server-fn)]]
+                       create-http-socket-server
+                       create-https-socket-server]
+            :let [{:keys [^String url stop opts]} (server-fn)]]
       (try
-        (binding [make-client #(http/client url)]
+        (binding [make-client #(http/client url opts)
+                  adjust-url  (if (.startsWith url "http")
+                                #(str url %)
+                                #(str "http://localhost" %))]
           (f))
         (finally
           (stop))))))
@@ -38,7 +43,7 @@
            :post #(update % :body slurp)}
           {:pre identity
            :post identity}
-          {:pre #(update % :url (partial str "http://some-host:1234"))
+          {:pre #(update % :url adjust-url)
            :post identity}])
        (gen/fmap
          (fn [{:keys [pre post]}]
@@ -68,19 +73,18 @@
          gen/string-ascii)
        (gen/fmap
          (fn [[method data]]
-           {:client       (make-client)
-            :method       method
-            :url          "/stream"
-            :query-params {"expect" (str (count data))}
-            :data         data
-            :as           :socket}))
+           {:client  (make-client)
+            :method  method
+            :url     "/stream"
+            :data    data
+            :as      :socket}))
        (gen-request)))
 
 (defn- gen-echo-request
   []
   (->> (gen/tuple
          (gen/elements [:post :put :patch :delete])
-         gen/string-ascii)
+         (gen/such-that seq gen/string-ascii))
        (gen/fmap
          (fn [[method body]]
            {:client (make-client)
@@ -157,16 +161,18 @@
     [request (->> (gen-fail-request)
                   (gen/fmap #(assoc % :throw-exceptions false)))
      send!   (gen-request-fn)]
-    (let [{:keys [status body]} (send! request)]
+    (let [{:keys [status body] :as resp} (send! request)]
       (and (= 500 status) (= "FAIL" body)))))
 
-(defspec t-bidirectional-request (times 50)
-  (prop/for-all
-    [{:keys [data] :as request} (gen-stream-request)]
-    (let [{:keys [status body]} (http/request request)]
-      (with-open [^java.net.Socket socket body
-                  out (.getOutputStream socket)
-                  in (.getInputStream socket)]
-        (io/copy data out)
-        (and (= 200 status)
-             (= data (slurp in)))))))
+(comment
+  ;; This cannot be verified using the MockWebServer, unfortunately.
+  (defspec t-bidirectional-request (times 50)
+    (prop/for-all
+      [{:keys [data] :as request} (gen-stream-request)]
+      (let [{:keys [status body]} (http/request request)]
+        (with-open [^java.net.Socket socket body
+                    out (.getOutputStream socket)
+                    in (.getInputStream socket)]
+          (io/copy data out)
+          (and (= 200 status)
+               (= data (slurp in))))))))
