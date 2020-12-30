@@ -1,6 +1,7 @@
 (ns unixsocket-http.core
   (:require [unixsocket-http.client :as client]
             [clojure.java.io :as io]
+            [clojure.string :as string]
             [clojure.tools.logging :as log])
   (:refer-clojure :exclude [get])
   (:import [unixsocket_http.impl
@@ -66,12 +67,13 @@
 
 (defn- build-url
   ^HttpUrl
-  [{:keys [url query-params]}]
-  (let [^HttpUrl$Builder builder (->> (if (re-matches #"https?://.*" url)
-                                        url
-                                        (str "http://localhost" url))
-                                      (HttpUrl/parse)
-                                      (.newBuilder))]
+  [{:keys [url query-params] :as request}]
+  (let [^HttpUrl$Builder builder (or (some-> (HttpUrl/parse url)
+                                             (.newBuilder))
+                                     (-> (str (client/base-uri request)
+                                              url)
+                                         (HttpUrl/parse)
+                                         (.newBuilder)))]
     (doseq [[k v] query-params]
       (.addQueryParameter builder (name k) (str v)))
     (.build builder)))
