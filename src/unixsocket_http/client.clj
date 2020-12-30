@@ -46,12 +46,14 @@
   ^SocketFactory [^String uri-str]
   (let [uri (URI. (adapt-url uri-str))]
     (case (.getScheme uri)
-      "unix" (FixedPathUnixSocketFactory. (.getPath uri))
-      "tcp"  (FixedPathTcpSocketFactory. (.getHost uri) (get-port uri))
-      "http" (FixedPathTcpSocketFactory. (.getHost uri) (get-port uri 80))
+      "unix"  (FixedPathUnixSocketFactory. (.getPath uri))
+      "tcp"   (FixedPathTcpSocketFactory. (.getHost uri) (get-port uri))
+      "http"  (FixedPathTcpSocketFactory. (.getHost uri) (get-port uri 80))
+      "https" (FixedPathTcpSocketFactory. (.getHost uri) (get-port uri 443))
       (throw
         (IllegalArgumentException.
-          (str "Can only handle URI schemes 'unix', 'tcp' and 'http', given: "
+          (str "Can only handle URI schemes 'unix', 'tcp', 'http' and 'https', "
+               "given: "
                uri-str))))))
 
 ;; ## OkHttpClient
