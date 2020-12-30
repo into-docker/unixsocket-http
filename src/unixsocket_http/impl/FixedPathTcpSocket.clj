@@ -9,8 +9,7 @@
     :state           state
     :constructors    {[java.net.SocketAddress] []}
     :methods         [[connect [] void]])
-  (:require [unixsocket-http.impl.delegate :refer [delegate]]
-            [clojure.java.io :as io])
+  (:require [unixsocket-http.impl.delegate :refer [delegate]])
   (:import [java.net Socket SocketAddress]))
 
 ;; ## State

@@ -8,8 +8,7 @@
     :init            init
     :state           state
     :constructors    {[java.net.Socket okhttp3.Response] []})
-  (:require [unixsocket-http.impl.delegate :refer [delegate]]
-            [clojure.java.io :as io])
+  (:require [unixsocket-http.impl.delegate :refer [delegate]])
   (:import [okhttp3 Response]
            [java.net Socket]))
 

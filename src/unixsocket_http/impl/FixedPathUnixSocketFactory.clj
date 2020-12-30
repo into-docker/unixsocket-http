@@ -7,11 +7,8 @@
     :init            init
     :state           state
     :constructors    {[String] []})
-  (:require [unixsocket-http.impl.delegate :refer [delegate]]
-            [clojure.java.io :as io])
   (:import [unixsocket_http.impl FixedPathUnixSocket]
-           [java.net InetAddress]
-           [javax.net SocketFactory]))
+           [java.net InetAddress]))
 
 ;; ## Constructor
 

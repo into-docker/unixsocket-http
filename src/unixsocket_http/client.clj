@@ -8,7 +8,7 @@
             OkHttpClient
             OkHttpClient$Builder]
            [javax.net SocketFactory]
-           [java.net InetAddress InetSocketAddress Socket URI]
+           [java.net InetAddress Socket URI]
            [java.time Duration]))
 
 ;; ## No DNS Lookups
@@ -18,7 +18,7 @@
 
 (deftype NoDns []
   Dns
-  (lookup [this hostname]
+  (lookup [_ hostname]
     [(InetAddress/getByAddress hostname (byte-array 4))]))
 
 ;; ## SocketFactory
@@ -78,8 +78,7 @@
                    (.writeTimeout (to-timeout write-timeout-ms))
                    (cond-> (not dns?) (.dns (NoDns.)))
                    (builder-fn)
-                   (.socketFactory factory))
-         client (delay (.build builder))]
+                   (.socketFactory factory))]
      (.build builder)))
 
 ;; ## Client Modes
@@ -87,7 +86,7 @@
 (defn- recreating-client
   [url opts]
   (let [base-factory (create-socket-factory url)]
-    (fn [request]
+    (fn [_]
       (let [factory (SingletonSocketFactory. base-factory)]
         {::client (create-client factory opts)
          ::socket (.getSocket factory)}))))
