@@ -39,15 +39,44 @@
   "This allows us to easily test e.g. `:as` specifiers in requests."
   []
   (->> (gen/elements
-         [{:pre #(assoc % :as :stream)
+         [;; response as stream
+          {:pre #(assoc % :as :stream)
            :post #(update % :body slurp)}
+
+          ;; request as stream
+          {:pre #(update %
+                         :body
+                         (fn [data]
+                           (some-> ^String data
+                                   (.getBytes "UTF-8")
+                                   (java.io.ByteArrayInputStream.))))
+           :post identity}
+
+          ;; as-is
           {:pre identity
            :post identity}
+
+          ;; use full url
           {:pre #(update % :url adjust-url)
            :post identity}])
        (gen/fmap
          (fn [{:keys [pre post]}]
            (comp post http/request pre)))))
+
+(defn- gen-socket-request-fn
+  []
+  (->> (gen/elements
+         [;; response as socket
+          {:pre #(assoc % :as :socket)
+           :post identity}])
+       (gen/fmap
+         (fn [{:keys [pre post]}]
+           (comp post http/request pre)))))
+
+(defn- gen-any-request-fn
+  []
+  (gen/one-of [(gen-socket-request-fn)
+               (gen-request-fn)]))
 
 (defn- gen-request
   [gen]
@@ -146,10 +175,19 @@
     (let [{:keys [status body]} (send! request)]
       (and (= 200 status) (= "" body)))))
 
+(defspec t-request-with-socket (times 10)
+  (prop/for-all
+    [request (gen-ok-request)
+     send!   (gen-socket-request-fn)]
+    (let [{:keys [status body]} (send! request)]
+      (with-open [^java.net.Socket socket body]
+        (and (instance? java.net.Socket socket)
+             (= 200 status))))))
+
 (defspec t-failing-request (times 50)
   (prop/for-all
     [request (gen-fail-request)
-     send!   (gen-request-fn)]
+     send!   (gen-any-request-fn)]
     (and (is (thrown-with-msg?
                Exception
                #"HTTP Error: 500"
@@ -163,6 +201,17 @@
      send!   (gen-request-fn)]
     (let [{:keys [status body] :as resp} (send! request)]
       (and (= 500 status) (= "FAIL" body)))))
+
+(defspec t-invalid-method (times 5)
+  (prop/for-all
+    [request (->> (gen-fail-request)
+                  (gen/fmap #(assoc % :method :unknown)))
+     send!   (gen-any-request-fn)]
+    (and (is (thrown-with-msg?
+               Exception
+               #"Invalid HTTP method keyword supplied: :unknown"
+               (send! request)))
+         true)))
 
 (comment
   ;; This cannot be verified using the MockWebServer, unfortunately.
