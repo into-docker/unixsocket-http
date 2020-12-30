@@ -25,7 +25,9 @@
                        create-https-socket-server]
             :let [{:keys [^String url stop opts]} (server-fn)]]
       (try
-        (binding [make-client #(http/client url opts)
+        (binding [make-client (if opts
+                                #(http/client url opts)
+                                #(http/client url))
                   adjust-url  (if (.startsWith url "http")
                                 #(str url %)
                                 #(str "http://localhost" %))]
@@ -89,11 +91,12 @@
       gen
       (gen/map
         (gen/elements ["x-header-one" "x-header-two"])
-        gen/string-ascii)
+        gen/string-ascii
+        {:min-elements 0, :max-elements 2})
       (gen/map
         (gen/fmap str gen/char-alpha)
-        gen/string-ascii))))
-
+        gen/string-ascii
+        {:min-elements 0, :max-elements 3}))))
 
 (defn- gen-stream-request
   []
