@@ -6,11 +6,9 @@
     :init            init
     :state           state
     :constructors    {[String Integer] []})
-  (:require [clojure.java.io :as io])
   (:import [unixsocket_http.impl FixedPathTcpSocket]
            [java.net InetAddress]
-           [java.net InetSocketAddress Socket SocketAddress]
-           [javax.net SocketFactory]))
+           [java.net InetSocketAddress SocketAddress]))
 
 ;; ## Constructor
 

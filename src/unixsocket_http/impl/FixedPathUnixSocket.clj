@@ -11,8 +11,7 @@
     :methods         [[connect [] void]])
   (:require [unixsocket-http.impl.delegate :refer [delegate]]
             [clojure.java.io :as io])
-  (:import [org.newsclub.net.unix AFUNIXSocketAddress AFUNIXSocket]
-           [java.net SocketAddress]))
+  (:import [org.newsclub.net.unix AFUNIXSocketAddress AFUNIXSocket]))
 
 ;; ## State
 

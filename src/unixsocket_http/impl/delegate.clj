@@ -13,7 +13,7 @@
    returned by `via`.
 
    You can set up exclusions using `except`."
-  [{:keys [class via except additional]}]
+  [{:keys [class via except]}]
   (let [include? (complement (set except))
         class (Class/forName (str class))]
     `(do

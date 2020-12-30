@@ -9,7 +9,6 @@
            [okhttp3
             HttpUrl
             HttpUrl$Builder
-            OkHttpClient
             Request
             Request$Builder
             RequestBody
@@ -111,7 +110,7 @@
 
 (defn- parse-response
   [^Response response
-   {:keys [client method as] :or {as :string}}
+   {:keys [as] :or {as :string}}
    connection]
   {:status (.code response)
    :headers (let [it (.. response headers iterator)]
