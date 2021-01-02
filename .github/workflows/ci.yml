@@ -15,7 +15,7 @@ jobs:
           fetch-depth: 2
       - uses: DeLaGuardo/clojure-lint-action@master
         with:
-          clj-kondo-args: --lint src
+          clj-kondo-args: --lint src test
           check-name: clj-kondo
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
