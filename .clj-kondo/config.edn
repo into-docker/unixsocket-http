@@ -1,2 +1,4 @@
-{:lint-as {unixsocket-http.core/defrequest        clojure.core/declare
-           unixsocket-http.impl.delegate/delegate clojure.core/quote}}
+{:lint-as {unixsocket-http.core/defrequest         clojure.core/declare
+           unixsocket-http.impl.delegate/delegate  clojure.core/quote
+           clojure.test.check.properties/for-all   clojure.core/let
+           clojure.test.check.clojure-test/defspec clojure.test/deftest}}

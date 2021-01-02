@@ -1,11 +1,8 @@
 (ns unixsocket-http.test.http-server
-  (:require [clojure.java.io :as io]
-            [clojure.string :as string])
+  (:require [clojure.string :as string])
   (:import [org.newsclub.net.unix
             AFUNIXServerSocket
             AFUNIXSocketAddress]
-           [okhttp3.mockwebserver.internal.duplex
-            DuplexResponseBody]
            [okhttp3.mockwebserver
             Dispatcher
             MockResponse
@@ -14,7 +11,6 @@
            [okhttp3.tls
             HandshakeCertificates$Builder
             HeldCertificate$Builder
-            HandshakeCertificates
             HeldCertificate]
            [java.io File]
            [javax.net

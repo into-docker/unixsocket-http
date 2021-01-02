@@ -1,12 +1,12 @@
 (ns unixsocket-http.core-test
   (:require [clojure.test.check
-             [clojure-test :refer :all]
+             [clojure-test :refer [defspec]]
              [generators :as gen]
              [properties :as prop]]
             [com.gfredericks.test.chuck :refer [times]]
-            [clojure.test :refer :all]
+            [clojure.test :refer [is use-fixtures]]
             [clojure.java.io :as io]
-            [unixsocket-http.test.http-server :refer :all]
+            [unixsocket-http.test.http-server :as httpd]
             [unixsocket-http.core :as http]))
 
 ;; ## Test Setup
@@ -19,10 +19,10 @@
 (use-fixtures
   :each
   (fn [f]
-    (doseq [server-fn [create-unix-socket-server
-                       create-tcp-socket-server
-                       create-http-socket-server
-                       create-https-socket-server]
+    (doseq [server-fn [httpd/create-unix-socket-server
+                       httpd/create-tcp-socket-server
+                       httpd/create-http-socket-server
+                       httpd/create-https-socket-server]
             :let [{:keys [^String url stop opts]} (server-fn)]]
       (try
         (binding [make-client (if opts
@@ -202,7 +202,7 @@
     [request (->> (gen-fail-request)
                   (gen/fmap #(assoc % :throw-exceptions false)))
      send!   (gen-request-fn)]
-    (let [{:keys [status body] :as resp} (send! request)]
+    (let [{:keys [status body]} (send! request)]
       (and (= 500 status) (= "FAIL" body)))))
 
 (defspec t-invalid-method (times 5)
