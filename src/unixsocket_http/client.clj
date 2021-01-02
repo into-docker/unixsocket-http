@@ -58,7 +58,7 @@
              "given: "
              uri)))))
 
-(defn- create-base-uri
+(defn- create-base-url
   [^URI uri]
   (if (contains? #{"tcp" "unix"} (.getScheme uri))
     "http://localhost"
@@ -67,8 +67,8 @@
 (defn- create-socket-factory
   ^SocketFactory [^String uri-str]
   (let [uri (URI. (adapt-url uri-str))]
-    {:factory (create-socket-factory-from-uri uri)
-     :uri     (create-base-uri uri)}))
+    {:factory  (create-socket-factory-from-uri uri)
+     :base-url (create-base-url uri)}))
 
 ;; ## OkHttpClient
 
@@ -97,40 +97,63 @@
                    (.socketFactory factory))]
      (.build builder)))
 
+
 ;; ## Client Modes
 
+;; ### Factories
+
+(defn- recreating-client-factory
+  [{:keys [factory]} opts]
+  (fn [{:keys [as]}]
+    (let [factory (SingletonSocketFactory. factory)]
+      (cond-> {::client (create-client factory opts)}
+        (= as :socket) (assoc ::socket (.getSocket factory))))))
+
+(defn- reusable-client-factory
+  [{:keys [factory]} opts]
+  (let [client (create-client factory opts)]
+    (fn [request]
+      (when (= (:as request) :socket)
+        (throw
+          (IllegalArgumentException.
+            (str "Client mode `:reuse` does not allow direct socket access.\n"
+                 "See documentation of `unixsocket-http.core/client`."))))
+      {::client client})))
+
+(defn- hybrid-client-factory
+  [socket-factory opts]
+  (let [fresh (recreating-client-factory socket-factory opts)
+        reusable (reusable-client-factory socket-factory opts)]
+    (fn [{:keys [as] :as request}]
+      (if (= as :socket)
+        (fresh request)
+        (reusable request)))))
+
+;; ### Clients
+
+(defn- make-client
+  "Create client map with `::factory` being the client creator function and
+   `::base-url` being the URL to use to prefix relative paths."
+  [client-factory-fn url opts]
+  (let [socket-factory (create-socket-factory url)]
+    {::factory  (client-factory-fn socket-factory opts)
+     ::base-url (or (:base-url opts) (:base-url socket-factory))}))
+
 (defn- recreating-client
+  "Client that will always initiate a new connection."
   [url opts]
-  (let [{:keys [factory uri]} (create-socket-factory url)]
-    {::factory (fn [_]
-                 (let [factory (SingletonSocketFactory. factory)]
-                   {::client (create-client factory opts)
-                    ::socket (.getSocket factory)}))
-     ::uri     uri}))
+  (make-client recreating-client-factory url opts))
 
 (defn- reusable-client
+  "Client that will always reuse connections. Note taht this one cannot use
+   the `:as :socket` mode."
   [url opts]
-  (let [{:keys [factory uri]} (create-socket-factory url)
-        client (create-client factory opts)]
-    {::factory (fn [request]
-                 (when (= (:as request) :socket)
-                   (throw
-                     (IllegalArgumentException.
-                       (str "Client mode `:reuse` does not allow direct socket access.\n"
-                            "See documentation of `unixsocket-http.core/client`."))))
-                 {::client client})
-     ::uri     uri}))
+  (make-client reusable-client-factory url opts))
 
 (defn- hybrid-client
   "Client that will create a fresh connection when the raw socket is requested."
   [url opts]
-  (let [fresh (recreating-client url opts)
-        client (reusable-client url opts)]
-    {::factory (fn [{:keys [as] :as request}]
-                 (if (= as :socket)
-                   ((::factory fresh) request)
-                   ((::factory client) request)))
-     ::uri     (some ::uri [fresh client])}))
+  (make-client hybrid-client-factory url opts))
 
 ;; ## API
 
@@ -146,9 +169,9 @@
   {:post [(some? %)]}
   ((::factory client) request))
 
-(defn base-uri
+(defn base-url
   [{:keys [client]}]
-  (::uri client))
+  (::base-url client))
 
 (defn get-client
   ^OkHttpClient [connection]
