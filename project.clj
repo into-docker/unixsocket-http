@@ -7,10 +7,10 @@
             :year 2020
             :key "mit"}
   :dependencies [[org.clojure/clojure "1.10.1"]
-                 [org.clojure/tools.logging "1.0.0"]
+                 [org.clojure/tools.logging "1.1.0"]
                  [com.kohlschutter.junixsocket/junixsocket-core "2.3.2"]
-                 [com.squareup.okhttp3/okhttp "4.7.1"]
-                 [org.jetbrains.kotlin/kotlin-stdlib-common "1.3.71"]]
+                 [com.squareup.okhttp3/okhttp "4.9.0"]
+                 [org.jetbrains.kotlin/kotlin-stdlib-common "1.4.21-2"]]
   :exclusions [org.clojure/clojure]
   :aot [unixsocket-http.impl.FixedPathUnixSocket
         unixsocket-http.impl.FixedPathUnixSocketFactory
@@ -20,9 +20,9 @@
         unixsocket-http.impl.ResponseSocket
         unixsocket-http.impl.StreamingBody]
   :profiles {:dev
-             {:dependencies [[com.squareup.okhttp3/okhttp-tls "4.7.1"]
-                             [com.squareup.okhttp3/mockwebserver "4.7.1"]
-                             [org.clojure/test.check "1.0.0"]
+             {:dependencies [[com.squareup.okhttp3/okhttp-tls "4.9.0"]
+                             [com.squareup.okhttp3/mockwebserver "4.9.0"]
+                             [org.clojure/test.check "1.1.0"]
                              [com.gfredericks/test.chuck "0.2.10"]]
               :global-vars {*warn-on-reflection* true}}
              :kaocha
