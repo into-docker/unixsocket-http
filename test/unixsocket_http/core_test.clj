@@ -216,6 +216,15 @@
                (send! request)))
          true)))
 
+(defspec t-invalid-as-statements (times 5)
+  (prop/for-all
+    [request (->> (gen-ok-request)
+                  (gen/fmap #(assoc % :as :unknown)))]
+    (and (is (thrown?
+               IllegalArgumentException
+               (http/request request)))
+         true)))
+
 (comment
   ;; This cannot be verified using the MockWebServer, unfortunately.
   (defspec t-bidirectional-request (times 50)
