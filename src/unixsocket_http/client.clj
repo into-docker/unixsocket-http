@@ -37,13 +37,13 @@
 (defn- get-port
   [^URI uri & [default]]
   (let [port (.getPort uri)]
-    (or (int
-          (if (pos? port)
+    (int
+      (or (if (pos? port)
             port
-            default))
-        (throw
-          (IllegalArgumentException.
-            (str "Port is required in URI: " uri))))))
+            default)
+          (throw
+            (IllegalArgumentException.
+              (str "Port is required in URI: " uri)))))))
 
 (defn- create-socket-factory-from-uri
   [^URI uri]
