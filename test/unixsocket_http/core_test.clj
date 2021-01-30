@@ -225,6 +225,21 @@
                (http/request request)))
          true)))
 
+(defspec t-http-wrappers (times 50)
+  (prop/for-all
+    [request (gen-ok-request)]
+    (let [{:keys [client method url]} request
+          opts (dissoc request :client :method :url)
+          http-fn (case method
+                    :get    http/get
+                    :post   http/post
+                    :put    http/put
+                    :delete http/delete
+                    :patch  http/patch)]
+      (if (empty? opts)
+        (http-fn client url)
+        (http-fn client url opts)))))
+
 (comment
   ;; This cannot be verified using the MockWebServer, unfortunately.
   (defspec t-bidirectional-request (times 50)

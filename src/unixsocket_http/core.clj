@@ -100,3 +100,4 @@
 (defrequest post)
 (defrequest put)
 (defrequest delete)
+(defrequest patch)
