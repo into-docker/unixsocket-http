@@ -1,4 +1,4 @@
-(ns unixsocket-http.impl.FixedPathUnixSocket
+(ns ^:no-doc unixsocket-http.impl.FixedPathUnixSocket
   "Wrapper around AFUNIXSocket that is bound to a fixed address and will
    ignore the argument passed to 'connect'. This is necessary since an HTTP
    client using this socket will pass its own socket address."

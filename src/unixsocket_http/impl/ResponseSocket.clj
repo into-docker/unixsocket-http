@@ -1,4 +1,4 @@
-(ns unixsocket-http.impl.ResponseSocket
+(ns ^:no-doc unixsocket-http.impl.ResponseSocket
   "Wrapper around an existing socket that will make sure that the originating
    OkHttp Response is closed when the socket is closed. Without this, we
    run into connection leaks."

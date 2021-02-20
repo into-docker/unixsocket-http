@@ -1,4 +1,4 @@
-(ns unixsocket-http.client
+(ns ^:no-doc unixsocket-http.client
   (:require [clojure.string :as string])
   (:import [unixsocket_http.impl
             FixedPathTcpSocketFactory

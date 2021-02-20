@@ -1,4 +1,4 @@
-(ns unixsocket-http.data
+(ns ^:no-doc unixsocket-http.data
   (:require [unixsocket-http.client :as client]
             [clojure.java.io :as io])
   (:import [unixsocket_http.impl

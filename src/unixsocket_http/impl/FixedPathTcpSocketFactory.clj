@@ -1,4 +1,4 @@
-(ns unixsocket-http.impl.FixedPathTcpSocketFactory
+(ns ^:no-doc unixsocket-http.impl.FixedPathTcpSocketFactory
   "SocketFactory that produces `FixedPathTcpSocket` objects bound to a fixed path."
   (:gen-class
     :name            unixsocket_http.impl.FixedPathTcpSocketFactory

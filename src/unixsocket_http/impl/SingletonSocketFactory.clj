@@ -1,4 +1,4 @@
-(ns unixsocket-http.impl.SingletonSocketFactory
+(ns ^:no-doc unixsocket-http.impl.SingletonSocketFactory
   "Wrapper around a `SocketFactory` that will cache the created socket."
   (:gen-class
     :name            unixsocket_http.impl.SingletonSocketFactory

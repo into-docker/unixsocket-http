@@ -1,4 +1,4 @@
-(ns unixsocket-http.impl.delegate
+(ns ^:no-doc unixsocket-http.impl.delegate
   (:import [java.lang.reflect Method Modifier]))
 
 (defn is-public-instance-method?

@@ -1,4 +1,4 @@
-(ns unixsocket-http.impl.StreamingBody
+(ns ^:no-doc unixsocket-http.impl.StreamingBody
   "Implementation of OkHttp's RequestBody that streams some data."
   (:gen-class
     :name         unixsocket_http.impl.StreamingBody
