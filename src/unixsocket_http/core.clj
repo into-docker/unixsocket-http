@@ -29,7 +29,7 @@
        threads.
    - `:builder-fn`: A function that will be called on the underlying
      `OkHttpClient$Builder` and can be used to perform arbitrary adjustments
-     to the HTTP client (with exception of the socket factory.
+     to the HTTP client (with exception of the socket factory).
 
    Examples:
 
@@ -81,6 +81,18 @@
   response)
 
 (defn request
+  "Perform an HTTP request. Options are:
+
+   - `:client` (required): the `client` to use for the request.
+   - `:method` (required): a keyword indicating the HTTP method to use.
+   - `:url` (required): the URL/path to send the request to.
+   - `:body`: request body, if supported by the HTTP method.
+   - `:headers`: a map of string/string pairs that will be sent as headers.
+   - `:query-params`: a map of string/string pairs that will be sent as the query string.
+   - `:as`: if set to `:stream` the response's body will be an `InputStream` value (that needs to be closed after consuming).
+   - `:throw-exceptions?`: if set to `false` all responses will be returned and no exception is thrown on HTTP error codes.
+   - `:throw-entire-message?`: if set to `true` HTTP exceptions will contain the full response as `ex-data`; streams and sockets will not be closed automatically!
+  "
   [request]
   (let [req        (data/build-request request)
         connection (client/connection request)]
