@@ -88,8 +88,15 @@ you'll run into connection leaks.
 
 ### Exceptions
 
-You can set `:throw-exceptions` to `false` in the options map to prevent the
-HTTP client from throwing an exception.
+By default, HTTP status codes ≥ 400 will cause an exception
+(`clojure.lang.ExceptionInfo`) to be thrown. You can access the underlying
+response via `ex-data`.
+
+Note that the `:body` will not be present if you are expecting a streaming
+response, unless you explicitly set `:throw-entire-message?` to `true`.
+
+If you want to prevent the client from throwing exceptions, and you'd rather get
+the response no matter what, you can set `:throw-exceptions?` to `false`.
 
 ### TLS
 
