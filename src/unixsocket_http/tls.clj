@@ -10,27 +10,18 @@
 
 ;; ## Helpers
 
-(defn- key-pair
-  ^KeyPair [file]
-  (let [{:keys [public-key private-key]} (pem/read file)]
-    (KeyPair. public-key private-key)))
-
-(defn- x509-certificate
-  ^X509Certificate [file]
-  (-> file pem/read :certificate))
-
 (defn- held-certificate
   ^HeldCertificate [key-file cert-file]
   (HeldCertificate.
-   (key-pair key-file)
-   (x509-certificate cert-file)))
+   (pem/read-key-pair key-file)
+   (pem/read-certificate cert-file)))
 
 ;; ## HandshakeCertificates
 
 (defn handshake-certificates
   ^HandshakeCertificates [{:keys [key ca cert]}]
   (-> (HandshakeCertificates$Builder.)
-      (.addTrustedCertificate (x509-certificate ca))
+      (.addTrustedCertificate (pem/read-certificate ca))
       (.heldCertificate
        (held-certificate key cert)
        (into-array X509Certificate []))

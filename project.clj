@@ -10,7 +10,7 @@
                  [org.clojure/tools.logging "1.1.0"]
                  [com.kohlschutter.junixsocket/junixsocket-core "2.3.2"]
                  [com.squareup.okhttp3/okhttp "4.9.0"]
-                 [into-docker/pem-reader "1.0.0-SNAPSHOT"]
+                 [into-docker/pem-reader "1.0.1"]
                  [com.squareup.okhttp3/okhttp-tls "4.9.0" :scope "provided"]
                  [org.jetbrains.kotlin/kotlin-stdlib-common "1.4.21-2"]]
   :exclusions [org.clojure/clojure]
