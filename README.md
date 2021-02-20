@@ -1,7 +1,7 @@
 # unixsocket-http
 
 [![Clojars Project](https://img.shields.io/clojars/v/unixsocket-http.svg)](https://clojars.org/unixsocket-http)
-[![Documentation](https://cljdoc.org/badge/into-docker/unixsocket-http)](https://cljdoc.org/d/into-docker/unixsocket-http/CURRENT)
+[![Documentation](https://cljdoc.org/badge/unixsocket-http/unixsocket-http)](https://cljdoc.org/d/unixsocket-http/unixsocket-http/CURRENT)
 [![CI](https://github.com/into-docker/unixsocket-http/workflows/CI/badge.svg)](https://github.com/into-docker/unixsocket-http/actions?query=workflow%3ACI)
 [![codecov](https://codecov.io/gh/into-docker/unixsocket-http/branch/master/graph/badge.svg?token=GLSK1G95TX)](https://codecov.io/gh/into-docker/unixsocket-http)
 [![Compatible with GraalVM](https://img.shields.io/badge/graalvm-compatible-success)](https://www.graalvm.org/docs/reference-manual/native-image)
