@@ -2,9 +2,7 @@
   (:require [unixsocket-http.client :as client]
             [unixsocket-http.data :as data]
             [clojure.tools.logging :as log])
-  (:refer-clojure :exclude [get])
-  (:import [java.net Socket]
-           [java.io InputStream]))
+  (:refer-clojure :exclude [get]))
 
 ;; ##  Client
 
@@ -48,23 +46,38 @@
 
 ;; ## I/O
 
-(defn- handle-response
-  [{:keys [status body] :as response}
-   {:keys [throw-exceptions throw-exceptions? as]
-    :or {throw-exceptions true
-         throw-exceptions? true}}]
-  (log/tracef "[unixsocket-http] <--- %s" (pr-str response))
-  (when (and (>= status 400)
-             throw-exceptions
-             throw-exceptions?)
-    (case as
-      :stream (.close ^InputStream body)
-      :socket (.close ^Socket body)
-      nil)
-    (throw
-      (ex-info
+(defn- throw?
+  [{:keys [status]}
+   {:keys [throw-exceptions throw-exceptions?]}]
+  (and (>= status 400)
+       (not (false? throw-exceptions))
+       (not (false? throw-exceptions?))))
+
+(letfn [(without-body [{:keys [^java.io.Closeable body] :as response}]
+          (.close body)
+          (dissoc response :body))]
+  (defn- prepare-ex-data!
+    [response {:keys [throw-entire-message? as]}]
+    (if-not throw-entire-message?
+      (case as
+        (:stream :socket) (without-body response)
+        response)
+      response)))
+
+(defn- throw-http-exception!
+  [{:keys [status] :as response} opts]
+  (when (throw? response opts)
+    (let [edata (prepare-ex-data! response opts)]
+      (throw
+       (ex-info
         (format "HTTP Error: %d" status)
-        response)))
+        edata)))))
+
+(defn- handle-response
+  [response opts]
+  (log/tracef "[unixsocket-http] <--- %s" (pr-str response))
+  (when (throw? response opts)
+    (throw-http-exception! response opts))
   response)
 
 (defn request
@@ -84,12 +97,13 @@
   [method]
   `(defn ~method
      ~(format
-        (str "Perform a %s request against the given client. Options are:%n%n"
-             "  - `:headers`:          a map of string/string pairs that will be sent as headers.%n"
-             "  - `:query-params`:     a map of string/string pairs that will be sent as the query string.%n"
-             "  - `:as`:               if set to `:stream` the response's body will be an `InputStream` value (that needs to be closed after consuming).%n"
-             "  - `:throw-exceptions`: if set to `false` all responses will be returned and no exception is thrown on HTTP error codes.%n")
-        (.toUpperCase (name method)))
+       (str "Perform a %s request against the given client. Options are:%n%n"
+            "  - `:headers`: a map of string/string pairs that will be sent as headers.%n"
+            "  - `:query-params`: a map of string/string pairs that will be sent as the query string.%n"
+            "  - `:as`: if set to `:stream` the response's body will be an `InputStream` value (that needs to be closed after consuming).%n"
+            "  - `:throw-exceptions?`: if set to `false` all responses will be returned and no exception is thrown on HTTP error codes.%n"
+            "  - `:throw-entire-message?`: if set to `true` HTTP exceptions will contain the full response as `ex-data`; streams and sockets will not be closed automatically!%n")
+       (.toUpperCase (name method)))
      ([~'client ~'url]
       (~method ~'client ~'url {}))
      ([~'client ~'url ~'opts]

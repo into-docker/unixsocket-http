@@ -197,6 +197,22 @@
                (send! request)))
          true)))
 
+(defspec t-failing-request-with-body (times 10)
+  (prop/for-all
+    [request (->> (gen-fail-request)
+                  (gen/fmap #(assoc % :throw-entire-message? true)))
+     send!   (gen-request-fn)]
+    (try
+      (send! request)
+      false
+      (catch clojure.lang.ExceptionInfo e
+        (let [{:keys [status body]} (ex-data e)
+              body (if-not (string? body)
+                     (with-open [in ^java.io.Closeable body]
+                       (slurp in))
+                     body)]
+          (and (= 500 status) (is (= "FAIL" body))))))))
+
 (defspec t-failing-request-without-exception (times 50)
   (prop/for-all
     [request (->> (gen-fail-request)
