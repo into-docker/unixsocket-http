@@ -227,8 +227,10 @@
 
 (defspec t-failing-request-without-exception (times 50)
   (prop/for-all
-    [request (->> (gen-fail-request)
-                  (gen/fmap #(assoc % :throw-exceptions false)))
+    [request (gen/let [req (gen-fail-request)
+                       k   (gen/elements [:throw-exceptions :throw-exceptions?])
+                       v   (gen/elements [nil false])]
+               (assoc req k v))
      send!   (gen-request-fn)]
     (let [{:keys [status body]} (send! request)]
       (and (= 500 status) (= "FAIL" body)))))

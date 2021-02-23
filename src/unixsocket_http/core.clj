@@ -48,10 +48,12 @@
 
 (defn- throw?
   [{:keys [status]}
-   {:keys [throw-exceptions throw-exceptions?]}]
+   {:keys [throw-exceptions throw-exceptions?]
+    :or {throw-exceptions  true
+         throw-exceptions? true}}]
   (and (>= status 400)
-       (not (false? throw-exceptions))
-       (not (false? throw-exceptions?))))
+       throw-exceptions
+       throw-exceptions?))
 
 (letfn [(without-body [{:keys [^java.io.Closeable body] :as response}]
           (.close body)
