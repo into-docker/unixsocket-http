@@ -106,23 +106,8 @@ TLS to perform any requests. Usually, the relevant certificates should be
 present in your Java keystore and the underlying `OkHttpClient` will pick them
 up automatically when verifying the connection.
 
-For _mutual_ TLS (mTLS), which requires the client to provide a certificate as
-well, you'll need to hook into the client's creation using the `:builder-fn`
-option and swap out the socket factory and trust manager:
-
-```clojure
-(uhttp/client
-  "https://..."
-  {:builder-fn
-   (fn [^okhttp3.OkHttpClient$Builder builder]
-     (.sslSocketFactory builder sslSocketFactory trustManager))})
-```
-
-Please refer to [okhttp-tls][] for possible ways to obtain those objects, e.g.
-via [`HandshakeCertificates`][handshake-certs].
-
-[okhttp-tls]: https://github.com/square/okhttp/tree/master/okhttp-tls#client-authentication
-[handshake-certs]: https://square.github.io/okhttp/4.x/okhttp-tls/okhttp3.tls/-handshake-certificates/
+For _mutual_ TLS (mTLS) or pointers on how to tackle TLS setup manually, check
+out the [respective documentation](./doc/01-mTLS.md).
 
 ## GraalVM
 
