@@ -2,10 +2,11 @@
   :description "A library to allow HTTP calls over a UNIX socket, e.g. for
                 communicating with Docker."
   :url "https://github.com/into-docker/unixsocket-http"
-  :license {:name "MIT License"
-            :url "none"
+  :license {:name "MIT"
+            :url "https://choosealicense.com/licenses/mit"
             :year 2020
-            :key "mit"}
+            :key "mit"
+            :comment "MIT License"}
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [org.clojure/tools.logging "1.1.0"]
                  [com.kohlschutter.junixsocket/junixsocket-core "2.3.2"]
