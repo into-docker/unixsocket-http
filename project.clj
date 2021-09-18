@@ -7,7 +7,7 @@
             :year 2020
             :key "mit"
             :comment "MIT License"}
-  :dependencies [[org.clojure/clojure "1.10.3"]
+  :dependencies [[org.clojure/clojure "1.10.3" :scope "provided"]
                  [org.clojure/tools.logging "1.1.0"]
                  [com.kohlschutter.junixsocket/junixsocket-core "2.3.4"]
                  [com.squareup.okhttp3/okhttp "4.9.0"]
