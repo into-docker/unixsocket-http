@@ -1,0 +1,48 @@
+name: Verify GraalVM Compatibility
+
+on:
+  push:
+    branches: ["master", "ci/**"]
+
+jobs:
+  verify-graalvm:
+    strategy:
+      matrix:
+        build:
+          - "linux-amd64"
+          - "macos-amd64"
+        include:
+          - build: "linux-amd64"
+            os: "ubuntu-latest"
+          - build: "macos-amd64"
+            os: "macos-latest"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
+        with:
+          repository: "into-docker/uhttp"
+          path: "uhttp"
+
+      - name: setup-clojure
+        uses: DeLaGuardo/setup-clojure@3.5
+        with:
+          lein: 2.9.1
+      - name: setup-graalvm-ce
+        uses: DeLaGuardo/setup-graalvm@4.0
+        with:
+          graalvm: "20.3.0"
+          java: "java11"
+      - name: setup-native-image
+        run: gu install native-image
+
+      - name: compile-native-image
+        run: |
+          lein install
+          cd uhttp
+          lein uberjar
+          native-image -jar target/uhttp.jar -H:Name=uhttp
+          chmod +x uhttp
+
+      - name: verify-result
+        run: uhttp/uhttp
