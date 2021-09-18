@@ -7,9 +7,9 @@
             :year 2020
             :key "mit"
             :comment "MIT License"}
-  :dependencies [[org.clojure/clojure "1.10.1"]
+  :dependencies [[org.clojure/clojure "1.10.3"]
                  [org.clojure/tools.logging "1.1.0"]
-                 [com.kohlschutter.junixsocket/junixsocket-core "2.3.2"]
+                 [com.kohlschutter.junixsocket/junixsocket-core "2.3.4"]
                  [com.squareup.okhttp3/okhttp "4.9.0"]
                  [org.jetbrains.kotlin/kotlin-stdlib-common "1.4.21-2"]]
   :exclusions [org.clojure/clojure]
@@ -24,10 +24,10 @@
              {:dependencies [[com.squareup.okhttp3/okhttp-tls "4.9.0"]
                              [com.squareup.okhttp3/mockwebserver "4.9.0"]
                              [org.clojure/test.check "1.1.0"]
-                             [com.gfredericks/test.chuck "0.2.10"]]
+                             [com.gfredericks/test.chuck "0.2.12"]]
               :global-vars {*warn-on-reflection* true}}
              :kaocha
-             {:dependencies [[lambdaisland/kaocha "1.0.732"
+             {:dependencies [[lambdaisland/kaocha "1.0.887"
                               :exclusions [org.clojure/spec.alpha]]
                              [lambdaisland/kaocha-cloverage "1.0.75"]
                              [org.clojure/java.classpath "1.0.0"]]}
