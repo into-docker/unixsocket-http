@@ -41,11 +41,10 @@
   (media-type this))
 
 (defn -contentLength
-  [this]
-  (let [length (.available (stream this))]
-    (if (pos? length)
-      length
-      -1)))
+  [_]
+  ;; This will always use chunked transfer encoding - which makes sense since
+  ;; it's not possible to reliable get the total length from a stream.
+  -1)
 
 (defn -writeTo
   [this ^BufferedSink sink]
