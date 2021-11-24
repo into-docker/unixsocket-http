@@ -10,8 +10,8 @@
   :dependencies [[org.clojure/clojure "1.10.3" :scope "provided"]
                  [org.clojure/tools.logging "1.1.0"]
                  [com.kohlschutter.junixsocket/junixsocket-core "2.3.4"]
-                 [com.squareup.okhttp3/okhttp "4.9.0"]
-                 [org.jetbrains.kotlin/kotlin-stdlib-common "1.4.21-2"]]
+                 [com.squareup.okhttp3/okhttp "4.9.3"]
+                 [org.jetbrains.kotlin/kotlin-stdlib-common "1.6.0"]]
   :exclusions [org.clojure/clojure]
   :aot [unixsocket-http.impl.FixedPathUnixSocket
         unixsocket-http.impl.FixedPathUnixSocketFactory
@@ -21,13 +21,13 @@
         unixsocket-http.impl.ResponseSocket
         unixsocket-http.impl.StreamingBody]
   :profiles {:dev
-             {:dependencies [[com.squareup.okhttp3/okhttp-tls "4.9.0"]
-                             [com.squareup.okhttp3/mockwebserver "4.9.0"]
+             {:dependencies [[com.squareup.okhttp3/okhttp-tls "4.9.3"]
+                             [com.squareup.okhttp3/mockwebserver "4.9.3"]
                              [org.clojure/test.check "1.1.0"]
-                             [com.gfredericks/test.chuck "0.2.12"]]
+                             [com.gfredericks/test.chuck "0.2.13"]]
               :global-vars {*warn-on-reflection* true}}
              :kaocha
-             {:dependencies [[lambdaisland/kaocha "1.0.887"
+             {:dependencies [[lambdaisland/kaocha "1.60.945"
                               :exclusions [org.clojure/spec.alpha]]
                              [lambdaisland/kaocha-cloverage "1.0.75"]
                              [org.clojure/java.classpath "1.0.0"]]}
