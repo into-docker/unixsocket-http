@@ -34,10 +34,20 @@
     (let [request (data/build-request
                     {:client       client
                      :method       :get
-                     :query-params {:x 1}
+                     :query-params {:x 1, :y "2"}
                      :url          url})]
       (is (= "GET" (.method request)))
-      (is (= (str url "/?x=1") (str (.url request))))
+      (is (= (str url "/?x=1&y=2") (str (.url request))))
+      (is (nil? (.body request)))))
+
+  (testing "request with repeating query parameters"
+    (let [request (data/build-request
+                    {:client       client
+                     :method       :get
+                     :query-params {:x [1 2 3]}
+                     :url          url})]
+      (is (= "GET" (.method request)))
+      (is (= (str url "/?x=1&x=2&x=3") (str (.url request))))
       (is (nil? (.body request)))))
 
   (testing "request with headers"

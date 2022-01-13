@@ -25,20 +25,27 @@
 
 ;; ## Request
 
+(defn- add-query-params!
+  [^HttpUrl$Builder builder {:keys [query-params]}]
+  (doseq [[k value-or-collection] query-params
+          v (if (coll? value-or-collection)
+              value-or-collection
+              [value-or-collection])]
+    (.addQueryParameter builder (name k) (str v))))
+
 (defn- build-url
   "Create URL to use for request. This will read the base URL from the
    client contained in the request in case the given url does not include
    a scheme and host."
   ^HttpUrl
-  [{:keys [url query-params] :as request}]
+  [{:keys [url] :as request}]
   (let [^HttpUrl$Builder builder (or (some-> (HttpUrl/parse url)
                                              (.newBuilder))
                                      (-> (str (client/base-url request)
                                               url)
                                          (HttpUrl/parse)
                                          (.newBuilder)))]
-    (doseq [[k v] query-params]
-      (.addQueryParameter builder (name k) (str v)))
+    (add-query-params! builder request)
     (.build builder)))
 
 (defn- build-body
