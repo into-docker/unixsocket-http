@@ -78,6 +78,10 @@ supplied as either `InputStream` or `String` using the `:body` key.
 ;;  "{\"status\":\"Pulling from library/node\",\"id\":\"latest\"}\r\n..."}
 ```
 
+As this is supported by some APIs, you can pass a query parameter multiple times
+by supplying a collection instead of value. For example, `{:x [1 2 3]}` turns
+into `?x=1&x=2&x=3`.
+
 ### Streaming Responses
 
 Use `:as :stream` in the options map to make `:body` an `java.io.InputStream` to
