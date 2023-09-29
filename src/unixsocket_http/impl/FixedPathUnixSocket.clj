@@ -11,10 +11,14 @@
     :methods         [[connect [] void]])
   (:require [unixsocket-http.impl.delegate :refer [delegate]]
             [clojure.java.io :as io])
-  (:import [org.newsclub.net.unix AFUNIXSocketAddress AFUNIXSocket]))
+  (:import [org.newsclub.net.unix
+            AFUNIXSelectorProvider
+            AFUNIXSocketAddress
+            AFUNIXSocket]))
 
 ;; ## State
 
+#_:clj-kondo/ignore
 (defn- get-socket
   ^AFUNIXSocket [^unixsocket_http.impl.FixedPathUnixSocket this]
   (-> this (.-state) (deref) (:socket)))
@@ -23,12 +27,16 @@
   ^AFUNIXSocketAddress [^unixsocket_http.impl.FixedPathUnixSocket this]
   (-> this (.-state) (deref) (:address)))
 
+(defn- set-socket!
+  [^unixsocket_http.impl.FixedPathUnixSocket this socket]
+  (swap! (.-state this) assoc :socket socket))
+
 ;; ## Constructor
 
 (defn -init
   [^String path]
   [[] (atom {:socket  (AFUNIXSocket/newInstance)
-             :address (AFUNIXSocketAddress. (io/file path))})])
+             :address (AFUNIXSocketAddress/of (io/file path))})])
 
 ;; ## Methods
 
@@ -37,10 +45,24 @@
    :via    get-socket
    :except [connect]})
 
+(defn- connect-socket!
+  ^AFUNIXSocket
+  [^AFUNIXSocketAddress address]
+  (let [provider (AFUNIXSelectorProvider/provider)
+        channel (.openSocketChannel provider)]
+    (.connect channel address)
+    (.socket channel)))
+
+(defn- connect-and-store-socket!
+  [^unixsocket_http.impl.FixedPathUnixSocket this]
+  (->> (get-address this)
+       (connect-socket!)
+       (set-socket! this)))
+
 (defn -connect
   ([this]
-   (.connect (get-socket this) (get-address this)))
+   (connect-and-store-socket! this))
   ([this _]
-   (.connect (get-socket this) (get-address this)))
-  ([this _ ^Integer timeout]
-   (.connect (get-socket this) (get-address this) timeout)))
+   (connect-and-store-socket! this))
+  ([this _ _]
+   (connect-and-store-socket! this)))
