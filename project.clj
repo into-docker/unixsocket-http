@@ -8,10 +8,10 @@
             :key "mit"
             :comment "MIT License"}
   :dependencies [[org.clojure/clojure "1.10.3" :scope "provided"]
-                 [org.clojure/tools.logging "1.1.0"]
-                 [com.kohlschutter.junixsocket/junixsocket-core "2.7.2" :extension "pom"]
-                 [com.squareup.okhttp3/okhttp "4.9.3"]
-                 [org.jetbrains.kotlin/kotlin-stdlib-common "1.6.0"]]
+                 [org.clojure/tools.logging "1.2.4"]
+                 [com.kohlschutter.junixsocket/junixsocket-core "2.8.0" :extension "pom"]
+                 [com.squareup.okhttp3/okhttp "4.11.0"]
+                 [org.jetbrains.kotlin/kotlin-stdlib-common "1.9.10"]]
   :exclusions [org.clojure/clojure]
   :aot [unixsocket-http.impl.FixedPathUnixSocket
         unixsocket-http.impl.FixedPathUnixSocketFactory
@@ -21,15 +21,15 @@
         unixsocket-http.impl.ResponseSocket
         unixsocket-http.impl.StreamingBody]
   :profiles {:dev
-             {:dependencies [[com.squareup.okhttp3/okhttp-tls "4.9.3"]
-                             [com.squareup.okhttp3/mockwebserver "4.9.3"]
-                             [org.clojure/test.check "1.1.0"]
-                             [com.gfredericks/test.chuck "0.2.13"]]
+             {:dependencies [[com.squareup.okhttp3/okhttp-tls "4.11.0"]
+                             [com.squareup.okhttp3/mockwebserver "4.11.0"]
+                             [org.clojure/test.check "1.1.1"]
+                             [com.gfredericks/test.chuck "0.2.14"]]
               :global-vars {*warn-on-reflection* true}}
              :kaocha
-             {:dependencies [[lambdaisland/kaocha "1.60.945"
+             {:dependencies [[lambdaisland/kaocha "1.87.1366"
                               :exclusions [org.clojure/spec.alpha]]
-                             [lambdaisland/kaocha-cloverage "1.0.75"]
+                             [lambdaisland/kaocha-cloverage "1.1.89"]
                              [org.clojure/java.classpath "1.0.0"]]}
              :ci
              [:kaocha
