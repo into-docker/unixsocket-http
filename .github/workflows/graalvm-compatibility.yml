@@ -23,7 +23,7 @@ jobs:
       - name: setup-clojure
         uses: DeLaGuardo/setup-clojure@3.5
         with:
-          lein: 2.9.1
+          lein: 2.10.0
       - name: setup-graalvm-ce
         uses: graalvm/setup-graalvm@v1
         with:
