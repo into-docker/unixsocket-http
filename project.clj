@@ -7,10 +7,10 @@
             :year 2020
             :key "mit"
             :comment "MIT License"}
-  :dependencies [[org.clojure/clojure "1.10.3" :scope "provided"]
+  :dependencies [[org.clojure/clojure "1.11.1" :scope "provided"]
                  [org.clojure/tools.logging "1.2.4"]
-                 [com.kohlschutter.junixsocket/junixsocket-common "2.8.0"]
-                 [com.kohlschutter.junixsocket/junixsocket-native-common "2.8.0"]
+                 [com.kohlschutter.junixsocket/junixsocket-common "2.8.1"]
+                 [com.kohlschutter.junixsocket/junixsocket-native-common "2.8.1"]
                  [com.squareup.okhttp3/okhttp "4.11.0"]
                  [org.jetbrains.kotlin/kotlin-stdlib-common "1.9.10"]]
   :exclusions [org.clojure/clojure]
