@@ -1,16 +1,16 @@
 (defproject unixsocket-http "1.0.14-SNAPSHOT"
   :description "A library to allow HTTP calls over a UNIX socket, e.g. for
-                communicating with Docker."
+               communicating with Docker."
   :url "https://github.com/into-docker/unixsocket-http"
   :license {:name "MIT"
             :url "https://choosealicense.com/licenses/mit"
             :year 2020
             :key "mit"
             :comment "MIT License"}
-  :dependencies [[org.clojure/clojure "1.10.3" :scope "provided"]
+  :dependencies [[org.clojure/clojure "1.11.1" :scope "provided"]
                  [org.clojure/tools.logging "1.2.4"]
-                 [com.kohlschutter.junixsocket/junixsocket-common "2.8.0"]
-                 [com.kohlschutter.junixsocket/junixsocket-native-common "2.8.0"]
+                 [com.kohlschutter.junixsocket/junixsocket-common "2.8.1"]
+                 [com.kohlschutter.junixsocket/junixsocket-native-common "2.8.1"]
                  [com.squareup.okhttp3/okhttp "4.11.0"]
                  [org.jetbrains.kotlin/kotlin-stdlib-common "1.9.10"]]
   :exclusions [org.clojure/clojure]
@@ -34,7 +34,18 @@
                              [org.clojure/java.classpath "1.0.0"]]}
              :ci
              [:kaocha
-              {:global-vars {*warn-on-reflection* false}}]}
+              {:global-vars {*warn-on-reflection* false}}]
+             :graalvm-compatibility
+             {:jar-name       "compat-base.jar"
+              :uberjar-name   "compat.jar"
+              :source-paths   ["test-graalvm/src"]
+              :resource-paths ["test-graalvm/resources"]
+              :global-vars    {*assert* false}
+              :jvm-opts       ["-Dclojure.compiler.direct-linking=true"
+                               "-Dclojure.spec.skip-macros=true"]
+              :dependencies   [[com.github.clj-easy/graal-build-time "1.0.5"]]
+              :main           compat.main
+              :aot            [compat.main]}}
   :aliases {"kaocha" ["with-profile" "+kaocha" "run" "-m" "kaocha.runner"]
             "ci"     ["with-profile" "+ci" "run" "-m" "kaocha.runner"
                       "--reporter" "documentation"

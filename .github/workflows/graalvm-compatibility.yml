@@ -1,0 +1,40 @@
+name: graalvm-compatibility
+
+on:
+  push:
+    branches: ["main", "ci/*"]
+
+jobs:
+  build-graalvm:
+    strategy:
+      matrix:
+        build:
+          - "linux-amd64"
+          - "macos-amd64"
+        include:
+          - build: "linux-amd64"
+            os: "ubuntu-latest"
+          - build: "macos-amd64"
+            os: "macos-latest"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: setup-clojure
+        uses: DeLaGuardo/setup-clojure@3.5
+        with:
+          lein: 2.10.0
+      - name: setup-graalvm-ce
+        uses: graalvm/setup-graalvm@v1
+        with:
+          distribution: "graalvm-community"
+          java-version: "21"
+
+      - name: compile-native-image
+        run: |
+          lein with-profile +graalvm-compatibility uberjar
+          native-image -jar target/compat.jar -o compat
+          chmod +x compat
+
+      - name: verify-result
+        run: ./compat
